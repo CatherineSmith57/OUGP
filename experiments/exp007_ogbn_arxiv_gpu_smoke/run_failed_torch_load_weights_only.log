@@ -1,0 +1,23 @@
+/home/shizitong/miniconda3/envs/tianjiaying/lib/python3.10/site-packages/torch/_weights_only_unpickler.py:549: UserWarning: Detected pickle protocol 4 in the checkpoint, which was not the default pickle protocol used by `torch.load` (2). The weights_only Unpickler might not support all instructions implemented by this protocol, please file an issue for adding support if you encounter this.
+  warnings.warn(
+Traceback (most recent call last):
+  File "/home/shizitong/tianjiaying/research/ougp/scripts/run_case_study.py", line 322, in <module>
+    main()
+  File "/home/shizitong/tianjiaying/research/ougp/scripts/run_case_study.py", line 308, in main
+    dataset = load_graph_dataset(args.data_root, args.dataset)
+  File "/home/shizitong/tianjiaying/research/ougp/src/ougp/data.py", line 247, in load_graph_dataset
+    return load_ogbn_node_property(root, "ogbn-arxiv")
+  File "/home/shizitong/tianjiaying/research/ougp/src/ougp/data.py", line 275, in load_ogbn_node_property
+    dataset = NodePropPredDataset(name=name, root=str(root))
+  File "/home/shizitong/miniconda3/envs/tianjiaying/lib/python3.10/site-packages/ogb/nodeproppred/dataset.py", line 63, in __init__
+    self.pre_process()
+  File "/home/shizitong/miniconda3/envs/tianjiaying/lib/python3.10/site-packages/ogb/nodeproppred/dataset.py", line 70, in pre_process
+    loaded_dict = torch.load(pre_processed_file_path)
+  File "/home/shizitong/miniconda3/envs/tianjiaying/lib/python3.10/site-packages/torch/serialization.py", line 1524, in load
+    raise pickle.UnpicklingError(_get_wo_message(str(e))) from None
+_pickle.UnpicklingError: Weights only load failed. In PyTorch 2.6, we changed the default value of the `weights_only` argument in `torch.load` from `False` to `True`. Re-running `torch.load` with `weights_only` set to `False` will likely succeed, but it can result in arbitrary code execution. Do it only if you got the file from a trusted source.
+Please file an issue with the following so that we can make `weights_only=True` compatible with your use case: WeightsUnpickler error: Unsupported operand 149
+
+Check the documentation of torch.load to learn more about types accepted by default with weights_only https://pytorch.org/docs/stable/generated/torch.load.html.
+
+ERROR conda.cli.main_run:execute(125): `conda run env PYTHONPATH=src python scripts/run_case_study.py --dataset ogbn-arxiv --epochs 1 --warmup-epochs 1 --hidden-dim 64 --memory-rank 8 --variants dense ougp --seeds 0 --out-dir experiments/exp007_ogbn_arxiv_gpu_smoke --graph-gamma 2.0 --param-gamma 2.0 --write-beta 0.25 --device cuda --max-gpus 1 --verbose --log-every 1` failed. (See above for error)

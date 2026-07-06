@@ -1,0 +1,27 @@
+{
+  "dataset": "photo",
+  "data_root": "data/raw/planetoid",
+  "out_dir": "experiments/exp006_photo_gpu_multiseed",
+  "variants": [
+    "dense",
+    "graph_only",
+    "param_only",
+    "dual_static",
+    "ougp_no_cross",
+    "ougp"
+  ],
+  "seeds": [0, 1, 2],
+  "epochs": 120,
+  "warmup_epochs": 15,
+  "hidden_dim": 64,
+  "memory_rank": 16,
+  "graph_sparsity": 0.3,
+  "param_sparsity": 0.3,
+  "graph_gamma": 2.0,
+  "param_gamma": 2.0,
+  "write_beta": 0.25,
+  "device": "cuda",
+  "max_gpus": 1,
+  "gpu_used": "CUDA_VISIBLE_DEVICES=2",
+  "split": "fixed 10/10/80 train/val/test split from loader seed 0"
+}

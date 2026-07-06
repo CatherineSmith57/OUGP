@@ -1,0 +1,1 @@
+/home/shizitong/miniconda3/envs/tianjiaying/bin/python scripts/run_case_study.py --dataset photo --epochs 1 --warmup-epochs 1 --hidden-dim 64 --memory-rank 16 --variants dense ougp --seeds 0 --out-dir experiments/exp005_photo_gpu_smoke --graph-gamma 2.0 --param-gamma 2.0 --write-beta 0.25 --device cuda --max-gpus 1 --verbose --log-every 1

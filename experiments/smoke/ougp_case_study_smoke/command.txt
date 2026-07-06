@@ -1,0 +1,2 @@
+cd /home/shizitong/tianjiaying/research/ougp
+PYTHONPATH=src /home/shizitong/miniconda3/envs/atma/bin/python scripts/run_case_study.py --dataset cora --epochs 2 --warmup-epochs 1 --variants dense ougp --seeds 0 --out-dir experiments/smoke/ougp_case_study_smoke --verbose --log-every 1

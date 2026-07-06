@@ -1,0 +1,2 @@
+cd /home/shizitong/tianjiaying/research/ougp
+PYTHONPATH=src /home/shizitong/miniconda3/envs/atma/bin/python scripts/run_case_study.py --dataset cora --epochs 80 --warmup-epochs 10 --variants dense dual_static ougp_no_cross ougp --seeds 0 --out-dir experiments/exp002_cora_high_sparsity_probe/s60 --graph-sparsity 0.60 --param-sparsity 0.60 --graph-gamma 2.0 --param-gamma 2.0 --cross-gamma 0.5 --write-beta 0.25 --verbose --log-every 20

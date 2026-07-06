@@ -1,0 +1,38 @@
+Traceback (most recent call last):
+  File "/home/shizitong/tianjiaying/research/ougp/scripts/run_case_study.py", line 303, in <module>
+    main()
+  File "/home/shizitong/tianjiaying/research/ougp/scripts/run_case_study.py", line 289, in main
+    dataset = load_planetoid(args.data_root, args.dataset)
+  File "/home/shizitong/tianjiaying/research/ougp/src/ougp/data.py", line 84, in load_planetoid
+    raw_dir = ensure_planetoid_raw(root, name)
+  File "/home/shizitong/tianjiaying/research/ougp/src/ougp/data.py", line 54, in ensure_planetoid_raw
+    _download(f"{PLANETOID_BASE_URL}/{filename}", path)
+  File "/home/shizitong/tianjiaying/research/ougp/src/ougp/data.py", line 43, in _download
+    with urllib.request.urlopen(url, timeout=60) as response:
+  File "/home/shizitong/miniconda3/envs/tianjiaying/lib/python3.10/urllib/request.py", line 216, in urlopen
+    return opener.open(url, data, timeout)
+  File "/home/shizitong/miniconda3/envs/tianjiaying/lib/python3.10/urllib/request.py", line 519, in open
+    response = self._open(req, data)
+  File "/home/shizitong/miniconda3/envs/tianjiaying/lib/python3.10/urllib/request.py", line 536, in _open
+    result = self._call_chain(self.handle_open, protocol, protocol +
+  File "/home/shizitong/miniconda3/envs/tianjiaying/lib/python3.10/urllib/request.py", line 496, in _call_chain
+    result = func(*args)
+  File "/home/shizitong/miniconda3/envs/tianjiaying/lib/python3.10/urllib/request.py", line 1391, in https_open
+    return self.do_open(http.client.HTTPSConnection, req,
+  File "/home/shizitong/miniconda3/envs/tianjiaying/lib/python3.10/urllib/request.py", line 1352, in do_open
+    r = h.getresponse()
+  File "/home/shizitong/miniconda3/envs/tianjiaying/lib/python3.10/http/client.py", line 1395, in getresponse
+    response.begin()
+  File "/home/shizitong/miniconda3/envs/tianjiaying/lib/python3.10/http/client.py", line 323, in begin
+    version, status, reason = self._read_status()
+  File "/home/shizitong/miniconda3/envs/tianjiaying/lib/python3.10/http/client.py", line 284, in _read_status
+    line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+  File "/home/shizitong/miniconda3/envs/tianjiaying/lib/python3.10/socket.py", line 717, in readinto
+    return self._sock.recv_into(b)
+  File "/home/shizitong/miniconda3/envs/tianjiaying/lib/python3.10/ssl.py", line 1307, in recv_into
+    return self.read(nbytes, buffer)
+  File "/home/shizitong/miniconda3/envs/tianjiaying/lib/python3.10/ssl.py", line 1163, in read
+    return self._sslobj.read(len, buffer)
+TimeoutError: The read operation timed out
+
+ERROR conda.cli.main_run:execute(125): `conda run env PYTHONPATH=src python scripts/run_case_study.py --dataset citeseer --epochs 120 --warmup-epochs 15 --hidden-dim 64 --memory-rank 16 --variants dense graph_only param_only dual_static ougp_no_cross ougp --seeds 0 1 2 --out-dir experiments/exp003_citeseer_cpu_multiseed --graph-gamma 2.0 --param-gamma 2.0 --write-beta 0.25 --device cpu --verbose --log-every 20` failed. (See above for error)

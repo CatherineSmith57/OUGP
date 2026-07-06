@@ -1,0 +1,141 @@
+dense/seed0 epoch=000 loss=1.0988 val=0.6700 test=0.6740 g_keep=1.000 p_keep=1.000
+dense/seed0 epoch=020 loss=0.7024 val=0.7620 test=0.7460 g_keep=1.000 p_keep=1.000
+dense/seed0 epoch=040 loss=0.3289 val=0.7880 test=0.7750 g_keep=1.000 p_keep=1.000
+dense/seed0 epoch=060 loss=0.2046 val=0.7980 test=0.7870 g_keep=1.000 p_keep=1.000
+dense/seed0 epoch=080 loss=0.1512 val=0.7960 test=0.7910 g_keep=1.000 p_keep=1.000
+dense/seed0 epoch=100 loss=0.1253 val=0.7920 test=0.7920 g_keep=1.000 p_keep=1.000
+dense/seed0 epoch=119 loss=0.1063 val=0.7940 test=0.7940 g_keep=1.000 p_keep=1.000
+dense/seed1 epoch=000 loss=1.0988 val=0.7420 test=0.7210 g_keep=1.000 p_keep=1.000
+dense/seed1 epoch=020 loss=0.7031 val=0.7700 test=0.7440 g_keep=1.000 p_keep=1.000
+dense/seed1 epoch=040 loss=0.2960 val=0.7880 test=0.7770 g_keep=1.000 p_keep=1.000
+dense/seed1 epoch=060 loss=0.1885 val=0.7940 test=0.7890 g_keep=1.000 p_keep=1.000
+dense/seed1 epoch=080 loss=0.1510 val=0.7920 test=0.7930 g_keep=1.000 p_keep=1.000
+dense/seed1 epoch=100 loss=0.1301 val=0.7940 test=0.7950 g_keep=1.000 p_keep=1.000
+dense/seed1 epoch=119 loss=0.1161 val=0.7900 test=0.7880 g_keep=1.000 p_keep=1.000
+dense/seed2 epoch=000 loss=1.0987 val=0.6600 test=0.6380 g_keep=1.000 p_keep=1.000
+dense/seed2 epoch=020 loss=0.7106 val=0.7520 test=0.7490 g_keep=1.000 p_keep=1.000
+dense/seed2 epoch=040 loss=0.3091 val=0.7940 test=0.7840 g_keep=1.000 p_keep=1.000
+dense/seed2 epoch=060 loss=0.1847 val=0.7940 test=0.7930 g_keep=1.000 p_keep=1.000
+dense/seed2 epoch=080 loss=0.1590 val=0.7940 test=0.7930 g_keep=1.000 p_keep=1.000
+dense/seed2 epoch=100 loss=0.1378 val=0.7940 test=0.7950 g_keep=1.000 p_keep=1.000
+dense/seed2 epoch=119 loss=0.1291 val=0.7860 test=0.7940 g_keep=1.000 p_keep=1.000
+graph_only/seed0 epoch=000 loss=1.0988 val=0.6700 test=0.6740 g_keep=1.000 p_keep=1.000
+graph_only/seed0 epoch=020 loss=0.7018 val=0.7640 test=0.7450 g_keep=0.983 p_keep=1.000
+graph_only/seed0 epoch=040 loss=0.3226 val=0.7880 test=0.7770 g_keep=0.926 p_keep=1.000
+graph_only/seed0 epoch=060 loss=0.1962 val=0.7920 test=0.7920 g_keep=0.869 p_keep=1.000
+graph_only/seed0 epoch=080 loss=0.1412 val=0.7920 test=0.7910 g_keep=0.811 p_keep=1.000
+graph_only/seed0 epoch=100 loss=0.1116 val=0.7860 test=0.7890 g_keep=0.754 p_keep=1.000
+graph_only/seed0 epoch=119 loss=0.0877 val=0.7820 test=0.7920 g_keep=0.700 p_keep=1.000
+graph_only/seed1 epoch=000 loss=1.0988 val=0.7420 test=0.7210 g_keep=1.000 p_keep=1.000
+graph_only/seed1 epoch=020 loss=0.7025 val=0.7700 test=0.7440 g_keep=0.983 p_keep=1.000
+graph_only/seed1 epoch=040 loss=0.2907 val=0.7860 test=0.7750 g_keep=0.926 p_keep=1.000
+graph_only/seed1 epoch=060 loss=0.1798 val=0.7940 test=0.7900 g_keep=0.869 p_keep=1.000
+graph_only/seed1 epoch=080 loss=0.1400 val=0.8000 test=0.7940 g_keep=0.811 p_keep=1.000
+graph_only/seed1 epoch=100 loss=0.1174 val=0.7880 test=0.7930 g_keep=0.754 p_keep=1.000
+graph_only/seed1 epoch=119 loss=0.0964 val=0.7840 test=0.7940 g_keep=0.700 p_keep=1.000
+graph_only/seed2 epoch=000 loss=1.0987 val=0.6600 test=0.6380 g_keep=1.000 p_keep=1.000
+graph_only/seed2 epoch=020 loss=0.7100 val=0.7520 test=0.7490 g_keep=0.983 p_keep=1.000
+graph_only/seed2 epoch=040 loss=0.3037 val=0.7960 test=0.7820 g_keep=0.926 p_keep=1.000
+graph_only/seed2 epoch=060 loss=0.1777 val=0.7960 test=0.7920 g_keep=0.869 p_keep=1.000
+graph_only/seed2 epoch=080 loss=0.1485 val=0.7960 test=0.7950 g_keep=0.811 p_keep=1.000
+graph_only/seed2 epoch=100 loss=0.1232 val=0.7820 test=0.7920 g_keep=0.754 p_keep=1.000
+graph_only/seed2 epoch=119 loss=0.1111 val=0.7820 test=0.7920 g_keep=0.700 p_keep=1.000
+param_only/seed0 epoch=000 loss=1.0988 val=0.6700 test=0.6740 g_keep=1.000 p_keep=1.000
+param_only/seed0 epoch=020 loss=0.7077 val=0.7620 test=0.7460 g_keep=1.000 p_keep=0.983
+param_only/seed0 epoch=040 loss=0.3576 val=0.7840 test=0.7750 g_keep=1.000 p_keep=0.926
+param_only/seed0 epoch=060 loss=0.2421 val=0.7920 test=0.7900 g_keep=1.000 p_keep=0.869
+param_only/seed0 epoch=080 loss=0.1966 val=0.8000 test=0.7900 g_keep=1.000 p_keep=0.811
+param_only/seed0 epoch=100 loss=0.1762 val=0.7980 test=0.7910 g_keep=1.000 p_keep=0.754
+param_only/seed0 epoch=119 loss=0.1656 val=0.7960 test=0.7920 g_keep=1.000 p_keep=0.700
+param_only/seed1 epoch=000 loss=1.0988 val=0.7420 test=0.7210 g_keep=1.000 p_keep=1.000
+param_only/seed1 epoch=020 loss=0.7085 val=0.7700 test=0.7440 g_keep=1.000 p_keep=0.983
+param_only/seed1 epoch=040 loss=0.3244 val=0.7820 test=0.7770 g_keep=1.000 p_keep=0.926
+param_only/seed1 epoch=060 loss=0.2266 val=0.7960 test=0.7880 g_keep=1.000 p_keep=0.869
+param_only/seed1 epoch=080 loss=0.1958 val=0.7960 test=0.7890 g_keep=1.000 p_keep=0.811
+param_only/seed1 epoch=100 loss=0.1803 val=0.7960 test=0.7940 g_keep=1.000 p_keep=0.754
+param_only/seed1 epoch=119 loss=0.1761 val=0.7920 test=0.7920 g_keep=1.000 p_keep=0.700
+param_only/seed2 epoch=000 loss=1.0987 val=0.6600 test=0.6380 g_keep=1.000 p_keep=1.000
+param_only/seed2 epoch=020 loss=0.7157 val=0.7520 test=0.7490 g_keep=1.000 p_keep=0.983
+param_only/seed2 epoch=040 loss=0.3373 val=0.7940 test=0.7810 g_keep=1.000 p_keep=0.926
+param_only/seed2 epoch=060 loss=0.2229 val=0.7980 test=0.7900 g_keep=1.000 p_keep=0.869
+param_only/seed2 epoch=080 loss=0.2037 val=0.7940 test=0.7930 g_keep=1.000 p_keep=0.811
+param_only/seed2 epoch=100 loss=0.1905 val=0.7980 test=0.7950 g_keep=1.000 p_keep=0.754
+param_only/seed2 epoch=119 loss=0.1892 val=0.7900 test=0.7930 g_keep=1.000 p_keep=0.700
+dual_static/seed0 epoch=000 loss=1.0988 val=0.6700 test=0.6740 g_keep=1.000 p_keep=1.000
+dual_static/seed0 epoch=020 loss=0.7071 val=0.7640 test=0.7450 g_keep=0.983 p_keep=0.983
+dual_static/seed0 epoch=040 loss=0.3513 val=0.7860 test=0.7760 g_keep=0.926 p_keep=0.926
+dual_static/seed0 epoch=060 loss=0.2331 val=0.7880 test=0.7900 g_keep=0.869 p_keep=0.869
+dual_static/seed0 epoch=080 loss=0.1852 val=0.7920 test=0.7910 g_keep=0.811 p_keep=0.811
+dual_static/seed0 epoch=100 loss=0.1615 val=0.7880 test=0.7930 g_keep=0.754 p_keep=0.754
+dual_static/seed0 epoch=119 loss=0.1423 val=0.7860 test=0.7910 g_keep=0.700 p_keep=0.700
+dual_static/seed1 epoch=000 loss=1.0988 val=0.7420 test=0.7210 g_keep=1.000 p_keep=1.000
+dual_static/seed1 epoch=020 loss=0.7079 val=0.7700 test=0.7440 g_keep=0.983 p_keep=0.983
+dual_static/seed1 epoch=040 loss=0.3189 val=0.7820 test=0.7730 g_keep=0.926 p_keep=0.926
+dual_static/seed1 epoch=060 loss=0.2170 val=0.7980 test=0.7860 g_keep=0.869 p_keep=0.869
+dual_static/seed1 epoch=080 loss=0.1842 val=0.7940 test=0.7930 g_keep=0.811 p_keep=0.811
+dual_static/seed1 epoch=100 loss=0.1650 val=0.7920 test=0.7920 g_keep=0.754 p_keep=0.754
+dual_static/seed1 epoch=119 loss=0.1521 val=0.7880 test=0.7910 g_keep=0.700 p_keep=0.700
+dual_static/seed2 epoch=000 loss=1.0987 val=0.6600 test=0.6380 g_keep=1.000 p_keep=1.000
+dual_static/seed2 epoch=020 loss=0.7151 val=0.7520 test=0.7490 g_keep=0.983 p_keep=0.983
+dual_static/seed2 epoch=040 loss=0.3320 val=0.7940 test=0.7810 g_keep=0.926 p_keep=0.926
+dual_static/seed2 epoch=060 loss=0.2155 val=0.7980 test=0.7890 g_keep=0.869 p_keep=0.869
+dual_static/seed2 epoch=080 loss=0.1925 val=0.7940 test=0.7910 g_keep=0.811 p_keep=0.811
+dual_static/seed2 epoch=100 loss=0.1740 val=0.7960 test=0.7920 g_keep=0.754 p_keep=0.754
+dual_static/seed2 epoch=119 loss=0.1661 val=0.7880 test=0.7940 g_keep=0.700 p_keep=0.700
+ougp_no_cross/seed0 epoch=000 loss=1.0988 val=0.6700 test=0.6740 g_keep=1.000 p_keep=1.000
+ougp_no_cross/seed0 epoch=020 loss=0.7071 val=0.7640 test=0.7450 g_keep=0.983 p_keep=0.983
+ougp_no_cross/seed0 epoch=040 loss=0.3513 val=0.7860 test=0.7760 g_keep=0.926 p_keep=0.926
+ougp_no_cross/seed0 epoch=060 loss=0.2319 val=0.7900 test=0.7920 g_keep=0.869 p_keep=0.869
+ougp_no_cross/seed0 epoch=080 loss=0.1829 val=0.7920 test=0.7900 g_keep=0.811 p_keep=0.811
+ougp_no_cross/seed0 epoch=100 loss=0.1613 val=0.7900 test=0.7900 g_keep=0.754 p_keep=0.754
+ougp_no_cross/seed0 epoch=119 loss=0.1369 val=0.7820 test=0.7920 g_keep=0.700 p_keep=0.700
+ougp_no_cross/seed1 epoch=000 loss=1.0988 val=0.7420 test=0.7210 g_keep=1.000 p_keep=1.000
+ougp_no_cross/seed1 epoch=020 loss=0.7079 val=0.7700 test=0.7440 g_keep=0.983 p_keep=0.983
+ougp_no_cross/seed1 epoch=040 loss=0.3190 val=0.7820 test=0.7740 g_keep=0.926 p_keep=0.926
+ougp_no_cross/seed1 epoch=060 loss=0.2165 val=0.7980 test=0.7850 g_keep=0.869 p_keep=0.869
+ougp_no_cross/seed1 epoch=080 loss=0.1827 val=0.7960 test=0.7920 g_keep=0.811 p_keep=0.811
+ougp_no_cross/seed1 epoch=100 loss=0.1628 val=0.7920 test=0.7960 g_keep=0.754 p_keep=0.754
+ougp_no_cross/seed1 epoch=119 loss=0.1482 val=0.7820 test=0.7960 g_keep=0.700 p_keep=0.700
+ougp_no_cross/seed2 epoch=000 loss=1.0987 val=0.6600 test=0.6380 g_keep=1.000 p_keep=1.000
+ougp_no_cross/seed2 epoch=020 loss=0.7151 val=0.7520 test=0.7490 g_keep=0.983 p_keep=0.983
+ougp_no_cross/seed2 epoch=040 loss=0.3320 val=0.7940 test=0.7810 g_keep=0.926 p_keep=0.926
+ougp_no_cross/seed2 epoch=060 loss=0.2149 val=0.7980 test=0.7890 g_keep=0.869 p_keep=0.869
+ougp_no_cross/seed2 epoch=080 loss=0.1912 val=0.7940 test=0.7920 g_keep=0.811 p_keep=0.811
+ougp_no_cross/seed2 epoch=100 loss=0.1716 val=0.7920 test=0.7930 g_keep=0.754 p_keep=0.754
+ougp_no_cross/seed2 epoch=119 loss=0.1626 val=0.7800 test=0.7930 g_keep=0.700 p_keep=0.700
+ougp/seed0 epoch=000 loss=1.0988 val=0.6700 test=0.6740 g_keep=1.000 p_keep=1.000
+ougp/seed0 epoch=020 loss=0.7071 val=0.7640 test=0.7450 g_keep=0.983 p_keep=0.983
+ougp/seed0 epoch=040 loss=0.3513 val=0.7860 test=0.7760 g_keep=0.926 p_keep=0.926
+ougp/seed0 epoch=060 loss=0.2325 val=0.7880 test=0.7910 g_keep=0.869 p_keep=0.869
+ougp/seed0 epoch=080 loss=0.1831 val=0.7920 test=0.7900 g_keep=0.811 p_keep=0.811
+ougp/seed0 epoch=100 loss=0.1599 val=0.7920 test=0.7910 g_keep=0.754 p_keep=0.754
+ougp/seed0 epoch=119 loss=0.1389 val=0.7860 test=0.7920 g_keep=0.700 p_keep=0.700
+ougp/seed1 epoch=000 loss=1.0988 val=0.7420 test=0.7210 g_keep=1.000 p_keep=1.000
+ougp/seed1 epoch=020 loss=0.7079 val=0.7700 test=0.7440 g_keep=0.983 p_keep=0.983
+ougp/seed1 epoch=040 loss=0.3190 val=0.7820 test=0.7740 g_keep=0.926 p_keep=0.926
+ougp/seed1 epoch=060 loss=0.2163 val=0.7980 test=0.7860 g_keep=0.869 p_keep=0.869
+ougp/seed1 epoch=080 loss=0.1827 val=0.7960 test=0.7920 g_keep=0.811 p_keep=0.811
+ougp/seed1 epoch=100 loss=0.1623 val=0.7940 test=0.7960 g_keep=0.754 p_keep=0.754
+ougp/seed1 epoch=119 loss=0.1482 val=0.7820 test=0.7950 g_keep=0.700 p_keep=0.700
+ougp/seed2 epoch=000 loss=1.0987 val=0.6600 test=0.6380 g_keep=1.000 p_keep=1.000
+ougp/seed2 epoch=020 loss=0.7151 val=0.7520 test=0.7490 g_keep=0.983 p_keep=0.983
+ougp/seed2 epoch=040 loss=0.3320 val=0.7940 test=0.7810 g_keep=0.926 p_keep=0.926
+ougp/seed2 epoch=060 loss=0.2151 val=0.7980 test=0.7890 g_keep=0.869 p_keep=0.869
+ougp/seed2 epoch=080 loss=0.1911 val=0.7940 test=0.7920 g_keep=0.811 p_keep=0.811
+ougp/seed2 epoch=100 loss=0.1712 val=0.7920 test=0.7940 g_keep=0.754 p_keep=0.754
+ougp/seed2 epoch=119 loss=0.1630 val=0.7840 test=0.7930 g_keep=0.700 p_keep=0.700
+Wrote 18 runs to experiments/exp004_pubmed_cpu_multiseed
+# OUGP Case Study Summary
+
+Dataset: `pubmed`
+
+| Variant | Best Test Acc | Graph Sparsity | Param Sparsity | Graph Churn | Param Churn |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| dense | 0.7900 +/- 0.0016 | 0.000 | 0.000 | 0.000 | 0.000 |
+| dual_static | 0.7890 +/- 0.0024 | 0.300 | 0.300 | 0.003 | 0.003 |
+| graph_only | 0.7927 +/- 0.0019 | 0.300 | 0.000 | 0.005 | 0.000 |
+| ougp | 0.7890 +/- 0.0024 | 0.300 | 0.300 | 0.008 | 0.003 |
+| ougp_no_cross | 0.7900 +/- 0.0036 | 0.300 | 0.300 | 0.006 | 0.003 |
+| param_only | 0.7913 +/- 0.0017 | 0.000 | 0.300 | 0.000 | 0.003 |
+
+

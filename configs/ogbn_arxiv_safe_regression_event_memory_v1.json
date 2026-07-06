@@ -1,0 +1,23 @@
+{
+  "experiment_id": "exp012_ogbn_arxiv_safe_regression_event_memory",
+  "dataset": "ogbn-arxiv",
+  "data_root": "data/raw/planetoid",
+  "out_dir": "experiments/exp012_ogbn_arxiv_safe_regression_event_memory",
+  "variants": ["dense", "param_only"],
+  "seeds": [0, 1, 2],
+  "epochs": 80,
+  "warmup_epochs": 10,
+  "hidden_dim": 64,
+  "memory_rank": 8,
+  "graph_sparsity": 0.30,
+  "param_sparsity": 0.30,
+  "graph_gamma": 2.0,
+  "param_gamma": 2.0,
+  "write_beta": 0.25,
+  "event_gamma": 0.0,
+  "trace_pruning": false,
+  "device": "cuda",
+  "max_gpus": 1,
+  "gpu_policy": "Use only one idle GPU in tianjiaying; do not use atma.",
+  "goal": "Safe regression after event-memory code changes: verify dense and param_only still run on ogbn-arxiv."
+}

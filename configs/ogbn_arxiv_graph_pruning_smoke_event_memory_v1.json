@@ -1,0 +1,23 @@
+{
+  "experiment_id": "exp013_ogbn_arxiv_graph_pruning_smoke_event_memory",
+  "dataset": "ogbn-arxiv",
+  "data_root": "data/raw/planetoid",
+  "out_dir": "experiments/exp013_ogbn_arxiv_graph_pruning_smoke_event_memory",
+  "variants": ["graph_only"],
+  "seeds": [0],
+  "epochs": 1,
+  "warmup_epochs": 0,
+  "hidden_dim": 64,
+  "memory_rank": 8,
+  "graph_sparsity": 0.30,
+  "param_sparsity": 0.30,
+  "graph_gamma": 2.0,
+  "param_gamma": 2.0,
+  "write_beta": 0.25,
+  "event_gamma": 0.0,
+  "trace_pruning": false,
+  "device": "cuda",
+  "max_gpus": 1,
+  "gpu_policy": "Use only one idle GPU in tianjiaying; do not use atma.",
+  "goal": "Check whether full-batch graph pruning still OOMs on ogbn-arxiv after event-memory code changes."
+}

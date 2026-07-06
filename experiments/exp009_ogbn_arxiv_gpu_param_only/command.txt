@@ -1,0 +1,1 @@
+/home/shizitong/miniconda3/envs/tianjiaying/bin/python scripts/run_case_study.py --dataset ogbn-arxiv --epochs 80 --warmup-epochs 10 --hidden-dim 64 --memory-rank 8 --variants dense param_only --seeds 0 1 2 --out-dir experiments/exp009_ogbn_arxiv_gpu_param_only --graph-gamma 2.0 --param-gamma 2.0 --write-beta 0.25 --device cuda --max-gpus 1 --verbose --log-every 20

@@ -1,0 +1,33 @@
+Traceback (most recent call last):
+  File "/home/shizitong/tianjiaying/research/ougp/scripts/run_case_study.py", line 322, in <module>
+    main()
+  File "/home/shizitong/tianjiaying/research/ougp/scripts/run_case_study.py", line 314, in main
+    results.append(run_one(args, dataset, variant, seed, out_dir))
+  File "/home/shizitong/tianjiaying/research/ougp/scripts/run_case_study.py", line 130, in run_one
+    loss.backward()
+  File "/home/shizitong/miniconda3/envs/tianjiaying/lib/python3.10/site-packages/torch/_tensor.py", line 648, in backward
+    torch.autograd.backward(
+  File "/home/shizitong/miniconda3/envs/tianjiaying/lib/python3.10/site-packages/torch/autograd/__init__.py", line 353, in backward
+    _engine_run_backward(
+  File "/home/shizitong/miniconda3/envs/tianjiaying/lib/python3.10/site-packages/torch/autograd/graph.py", line 824, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 106.83 GiB. GPU 0 has a total capacity of 23.69 GiB of which 22.54 GiB is free. Including non-PyTorch memory, this process has 1.13 GiB memory in use. Of the allocated memory 665.21 MiB is allocated by PyTorch, and 178.79 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+
+ERROR conda.cli.main_run:execute(125): `conda run env PYTHONPATH=src python scripts/run_case_study.py --dataset ogbn-arxiv --epochs 80 --warmup-epochs 10 --hidden-dim 64 --memory-rank 8 --variants dense graph_only param_only dual_static ougp_no_cross ougp --seeds 0 1 2 --out-dir experiments/exp008_ogbn_arxiv_gpu_multiseed --graph-gamma 2.0 --param-gamma 2.0 --write-beta 0.25 --device cuda --max-gpus 1 --verbose --log-every 20` failed. (See above for error)
+dense/seed0 epoch=000 loss=3.6958 val=0.2442 test=0.2258 g_keep=1.000 p_keep=1.000
+dense/seed0 epoch=020 loss=2.5416 val=0.3217 test=0.2880 g_keep=1.000 p_keep=1.000
+dense/seed0 epoch=040 loss=2.0326 val=0.5079 test=0.5053 g_keep=1.000 p_keep=1.000
+dense/seed0 epoch=060 loss=1.8122 val=0.5756 test=0.5841 g_keep=1.000 p_keep=1.000
+dense/seed0 epoch=079 loss=1.7227 val=0.5951 test=0.6032 g_keep=1.000 p_keep=1.000
+dense/seed1 epoch=000 loss=3.6967 val=0.2620 test=0.2403 g_keep=1.000 p_keep=1.000
+dense/seed1 epoch=020 loss=2.4990 val=0.3633 test=0.3416 g_keep=1.000 p_keep=1.000
+dense/seed1 epoch=040 loss=2.0152 val=0.5050 test=0.5026 g_keep=1.000 p_keep=1.000
+dense/seed1 epoch=060 loss=1.8070 val=0.5751 test=0.5818 g_keep=1.000 p_keep=1.000
+dense/seed1 epoch=079 loss=1.7124 val=0.5958 test=0.6029 g_keep=1.000 p_keep=1.000
+dense/seed2 epoch=000 loss=3.6902 val=0.0773 test=0.0588 g_keep=1.000 p_keep=1.000
+dense/seed2 epoch=020 loss=2.5315 val=0.3369 test=0.3143 g_keep=1.000 p_keep=1.000
+dense/seed2 epoch=040 loss=2.0059 val=0.5071 test=0.5037 g_keep=1.000 p_keep=1.000
+dense/seed2 epoch=060 loss=1.8006 val=0.5732 test=0.5790 g_keep=1.000 p_keep=1.000
+dense/seed2 epoch=079 loss=1.7163 val=0.5982 test=0.6055 g_keep=1.000 p_keep=1.000
+graph_only/seed0 epoch=000 loss=3.6958 val=0.2442 test=0.2258 g_keep=1.000 p_keep=1.000
+

@@ -1,0 +1,40 @@
+dense/seed0 epoch=000 loss=3.6958 val=0.2442 test=0.2258 g_keep=1.000 p_keep=1.000
+dense/seed0 epoch=020 loss=2.5416 val=0.3217 test=0.2880 g_keep=1.000 p_keep=1.000
+dense/seed0 epoch=040 loss=2.0326 val=0.5079 test=0.5053 g_keep=1.000 p_keep=1.000
+dense/seed0 epoch=060 loss=1.8122 val=0.5756 test=0.5841 g_keep=1.000 p_keep=1.000
+dense/seed0 epoch=079 loss=1.7227 val=0.5951 test=0.6032 g_keep=1.000 p_keep=1.000
+dense/seed1 epoch=000 loss=3.6967 val=0.2620 test=0.2403 g_keep=1.000 p_keep=1.000
+dense/seed1 epoch=020 loss=2.4990 val=0.3633 test=0.3416 g_keep=1.000 p_keep=1.000
+dense/seed1 epoch=040 loss=2.0152 val=0.5050 test=0.5026 g_keep=1.000 p_keep=1.000
+dense/seed1 epoch=060 loss=1.8070 val=0.5751 test=0.5818 g_keep=1.000 p_keep=1.000
+dense/seed1 epoch=079 loss=1.7124 val=0.5958 test=0.6029 g_keep=1.000 p_keep=1.000
+dense/seed2 epoch=000 loss=3.6902 val=0.0773 test=0.0588 g_keep=1.000 p_keep=1.000
+dense/seed2 epoch=020 loss=2.5315 val=0.3369 test=0.3143 g_keep=1.000 p_keep=1.000
+dense/seed2 epoch=040 loss=2.0059 val=0.5071 test=0.5037 g_keep=1.000 p_keep=1.000
+dense/seed2 epoch=060 loss=1.8006 val=0.5732 test=0.5790 g_keep=1.000 p_keep=1.000
+dense/seed2 epoch=079 loss=1.7163 val=0.5982 test=0.6055 g_keep=1.000 p_keep=1.000
+param_only/seed0 epoch=000 loss=3.6958 val=0.2442 test=0.2258 g_keep=1.000 p_keep=1.000
+param_only/seed0 epoch=020 loss=2.5567 val=0.3173 test=0.2837 g_keep=1.000 p_keep=0.953
+param_only/seed0 epoch=040 loss=2.0681 val=0.4954 test=0.4916 g_keep=1.000 p_keep=0.867
+param_only/seed0 epoch=060 loss=1.8545 val=0.5657 test=0.5727 g_keep=1.000 p_keep=0.781
+param_only/seed0 epoch=079 loss=1.7682 val=0.5870 test=0.5951 g_keep=1.000 p_keep=0.700
+param_only/seed1 epoch=000 loss=3.6967 val=0.2620 test=0.2403 g_keep=1.000 p_keep=1.000
+param_only/seed1 epoch=020 loss=2.5142 val=0.3567 test=0.3346 g_keep=1.000 p_keep=0.953
+param_only/seed1 epoch=040 loss=2.0467 val=0.4959 test=0.4941 g_keep=1.000 p_keep=0.867
+param_only/seed1 epoch=060 loss=1.8517 val=0.5657 test=0.5718 g_keep=1.000 p_keep=0.781
+param_only/seed1 epoch=079 loss=1.7651 val=0.5857 test=0.5919 g_keep=1.000 p_keep=0.700
+param_only/seed2 epoch=000 loss=3.6902 val=0.0773 test=0.0588 g_keep=1.000 p_keep=1.000
+param_only/seed2 epoch=020 loss=2.5462 val=0.3306 test=0.3058 g_keep=1.000 p_keep=0.953
+param_only/seed2 epoch=040 loss=2.0424 val=0.4946 test=0.4892 g_keep=1.000 p_keep=0.867
+param_only/seed2 epoch=060 loss=1.8412 val=0.5640 test=0.5658 g_keep=1.000 p_keep=0.781
+param_only/seed2 epoch=079 loss=1.7616 val=0.5891 test=0.5959 g_keep=1.000 p_keep=0.700
+Wrote 6 runs to experiments/exp012_ogbn_arxiv_safe_regression_event_memory
+# OUGP Case Study Summary
+
+Dataset: `ogbn-arxiv`
+
+| Variant | Best Test Acc | Graph Sparsity | Param Sparsity | Graph Churn | Param Churn |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| dense | 0.6051 +/- 0.0017 | 0.000 | 0.000 | 0.000 | 0.000 |
+| param_only | 0.5943 +/- 0.0017 | 0.000 | 0.300 | 0.000 | 0.005 |
+

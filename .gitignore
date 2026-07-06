@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+data/raw/*
+data/processed/*
+!data/raw/README.md
+!data/processed/README.md
+experiments/manual*/
+*.pt
+*.pth

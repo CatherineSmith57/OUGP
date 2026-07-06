@@ -1,0 +1,20 @@
+{
+  "dataset": "ogbn-arxiv",
+  "data_root": "data/raw/planetoid",
+  "out_dir": "experiments/exp009_ogbn_arxiv_gpu_param_only",
+  "variants": ["dense", "param_only"],
+  "seeds": [0, 1, 2],
+  "epochs": 80,
+  "warmup_epochs": 10,
+  "hidden_dim": 64,
+  "memory_rank": 8,
+  "graph_sparsity": 0.3,
+  "param_sparsity": 0.3,
+  "graph_gamma": 2.0,
+  "param_gamma": 2.0,
+  "write_beta": 0.25,
+  "device": "cuda",
+  "max_gpus": 1,
+  "gpu_used": "CUDA_VISIBLE_DEVICES=2",
+  "note": "Full graph-pruning variants failed on ogbn-arxiv with CUDA OOM during backward."
+}

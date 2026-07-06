@@ -1,0 +1,28 @@
+{
+  "experiment_id": "exp010_photo_param_sparsity_sweep",
+  "dataset": "photo",
+  "data_root": "data/raw/planetoid",
+  "out_root": "experiments/exp010_photo_param_sparsity_sweep",
+  "variants": [
+    "dense",
+    "graph_only",
+    "param_only",
+    "dual_static",
+    "ougp_no_cross",
+    "ougp"
+  ],
+  "seeds": [0, 1, 2],
+  "epochs": 120,
+  "warmup_epochs": 15,
+  "hidden_dim": 64,
+  "memory_rank": 16,
+  "graph_sparsity": 0.30,
+  "param_sparsity_values": [0.05, 0.10, 0.20, 0.30],
+  "graph_gamma": 2.0,
+  "param_gamma": 2.0,
+  "write_beta": 0.25,
+  "device": "cuda",
+  "max_gpus": 1,
+  "gpu_policy": "Use only one idle GPU in the tianjiaying conda environment; do not use atma.",
+  "goal": "Diagnose why parameter pruning hurts Amazon Photo by sweeping parameter sparsity while keeping graph sparsity at 30%."
+}

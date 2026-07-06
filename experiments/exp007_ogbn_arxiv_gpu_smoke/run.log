@@ -1,0 +1,13 @@
+dense/seed0 epoch=000 loss=3.6958 val=0.2442 test=0.2258 g_keep=1.000 p_keep=1.000
+ougp/seed0 epoch=000 loss=3.6958 val=0.2442 test=0.2258 g_keep=1.000 p_keep=1.000
+Wrote 2 runs to experiments/exp007_ogbn_arxiv_gpu_smoke
+# OUGP Case Study Summary
+
+Dataset: `ogbn-arxiv`
+
+| Variant | Best Test Acc | Graph Sparsity | Param Sparsity | Graph Churn | Param Churn |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| dense | 0.2258 +/- 0.0000 | 0.000 | 0.000 | 0.000 | 0.000 |
+| ougp | 0.2258 +/- 0.0000 | 0.000 | 0.000 | 0.000 | 0.000 |
+
+
