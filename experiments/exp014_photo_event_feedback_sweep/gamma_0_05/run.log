@@ -1,0 +1,52 @@
+graph_only/seed0 epoch=000 loss=2.0795 val=0.2510 test=0.2559 g_keep=1.000 p_keep=1.000
+graph_only/seed0 epoch=020 loss=1.9391 val=0.2471 test=0.2536 g_keep=0.983 p_keep=1.000
+graph_only/seed0 epoch=040 loss=1.8280 val=0.2471 test=0.2536 g_keep=0.926 p_keep=1.000
+graph_only/seed0 epoch=060 loss=1.6069 val=0.4824 test=0.5013 g_keep=0.869 p_keep=1.000
+graph_only/seed0 epoch=080 loss=1.3791 val=0.6431 test=0.6551 g_keep=0.811 p_keep=1.000
+graph_only/seed0 epoch=100 loss=1.1898 val=0.7817 test=0.7956 g_keep=0.754 p_keep=1.000
+graph_only/seed0 epoch=119 loss=1.0550 val=0.8301 test=0.8355 g_keep=0.700 p_keep=1.000
+graph_only/seed1 epoch=000 loss=2.0795 val=0.2471 test=0.2536 g_keep=1.000 p_keep=1.000
+graph_only/seed1 epoch=020 loss=1.9396 val=0.2471 test=0.2536 g_keep=0.983 p_keep=1.000
+graph_only/seed1 epoch=040 loss=1.8320 val=0.2484 test=0.2536 g_keep=0.926 p_keep=1.000
+graph_only/seed1 epoch=060 loss=1.6189 val=0.4327 test=0.4493 g_keep=0.869 p_keep=1.000
+graph_only/seed1 epoch=080 loss=1.3896 val=0.6065 test=0.6178 g_keep=0.811 p_keep=1.000
+graph_only/seed1 epoch=100 loss=1.2015 val=0.7752 test=0.7884 g_keep=0.754 p_keep=1.000
+graph_only/seed1 epoch=119 loss=1.0705 val=0.8327 test=0.8356 g_keep=0.700 p_keep=1.000
+graph_only/seed2 epoch=000 loss=2.0793 val=0.2471 test=0.2536 g_keep=1.000 p_keep=1.000
+graph_only/seed2 epoch=020 loss=1.9305 val=0.2471 test=0.2536 g_keep=0.983 p_keep=1.000
+graph_only/seed2 epoch=040 loss=1.8082 val=0.2484 test=0.2541 g_keep=0.926 p_keep=1.000
+graph_only/seed2 epoch=060 loss=1.5985 val=0.4902 test=0.5080 g_keep=0.869 p_keep=1.000
+graph_only/seed2 epoch=080 loss=1.3706 val=0.6183 test=0.6343 g_keep=0.811 p_keep=1.000
+graph_only/seed2 epoch=100 loss=1.1916 val=0.7529 test=0.7598 g_keep=0.754 p_keep=1.000
+graph_only/seed2 epoch=119 loss=1.0670 val=0.7869 test=0.8116 g_keep=0.700 p_keep=1.000
+ougp/seed0 epoch=000 loss=2.0795 val=0.2510 test=0.2559 g_keep=1.000 p_keep=1.000
+ougp/seed0 epoch=020 loss=1.9402 val=0.2471 test=0.2536 g_keep=0.983 p_keep=0.983
+ougp/seed0 epoch=040 loss=1.8441 val=0.2471 test=0.2536 g_keep=0.926 p_keep=0.926
+ougp/seed0 epoch=060 loss=1.6750 val=0.4366 test=0.4492 g_keep=0.869 p_keep=0.869
+ougp/seed0 epoch=080 loss=1.5056 val=0.5569 test=0.5725 g_keep=0.811 p_keep=0.811
+ougp/seed0 epoch=100 loss=1.3629 val=0.6627 test=0.6781 g_keep=0.754 p_keep=0.754
+ougp/seed0 epoch=119 loss=1.2607 val=0.7608 test=0.7690 g_keep=0.700 p_keep=0.700
+ougp/seed1 epoch=000 loss=2.0795 val=0.2471 test=0.2536 g_keep=1.000 p_keep=1.000
+ougp/seed1 epoch=020 loss=1.9406 val=0.2471 test=0.2536 g_keep=0.983 p_keep=0.983
+ougp/seed1 epoch=040 loss=1.8471 val=0.2484 test=0.2536 g_keep=0.926 p_keep=0.926
+ougp/seed1 epoch=060 loss=1.6838 val=0.3948 test=0.4025 g_keep=0.869 p_keep=0.869
+ougp/seed1 epoch=080 loss=1.5126 val=0.4784 test=0.5185 g_keep=0.811 p_keep=0.811
+ougp/seed1 epoch=100 loss=1.3725 val=0.6418 test=0.6598 g_keep=0.754 p_keep=0.754
+ougp/seed1 epoch=119 loss=1.2760 val=0.7451 test=0.7572 g_keep=0.700 p_keep=0.700
+ougp/seed2 epoch=000 loss=2.0793 val=0.2471 test=0.2536 g_keep=1.000 p_keep=1.000
+ougp/seed2 epoch=020 loss=1.9316 val=0.2471 test=0.2536 g_keep=0.983 p_keep=0.983
+ougp/seed2 epoch=040 loss=1.8262 val=0.2484 test=0.2536 g_keep=0.926 p_keep=0.926
+ougp/seed2 epoch=060 loss=1.6658 val=0.4353 test=0.4443 g_keep=0.869 p_keep=0.869
+ougp/seed2 epoch=080 loss=1.4944 val=0.5752 test=0.5908 g_keep=0.811 p_keep=0.811
+ougp/seed2 epoch=100 loss=1.3592 val=0.6288 test=0.6407 g_keep=0.754 p_keep=0.754
+ougp/seed2 epoch=119 loss=1.2689 val=0.7307 test=0.7309 g_keep=0.700 p_keep=0.700
+Wrote 6 runs to experiments/exp014_photo_event_feedback_sweep/gamma_0_05
+# OUGP Case Study Summary
+
+Dataset: `photo`
+
+| Variant | Best Test Acc | Graph Sparsity | Param Sparsity | Graph Churn | Param Churn |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| graph_only | 0.8276 +/- 0.0113 | 0.300 | 0.000 | 0.011 | 0.000 |
+| ougp | 0.7516 +/- 0.0157 | 0.300 | 0.300 | 0.011 | 0.003 |
+
