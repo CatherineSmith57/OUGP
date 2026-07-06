@@ -1,0 +1,30 @@
+ougp/seed0 epoch=000 loss=2.0795 val=0.2510 test=0.2559 g_keep=1.000 p_keep=1.000
+ougp/seed0 epoch=020 loss=1.9402 val=0.2471 test=0.2536 g_keep=0.983 p_keep=0.983
+ougp/seed0 epoch=040 loss=1.8441 val=0.2471 test=0.2536 g_keep=0.926 p_keep=0.926
+ougp/seed0 epoch=060 loss=1.6748 val=0.4366 test=0.4492 g_keep=0.869 p_keep=0.869
+ougp/seed0 epoch=080 loss=1.5063 val=0.5582 test=0.5729 g_keep=0.811 p_keep=0.811
+ougp/seed0 epoch=100 loss=1.3656 val=0.6575 test=0.6722 g_keep=0.754 p_keep=0.754
+ougp/seed0 epoch=119 loss=1.2625 val=0.7582 test=0.7642 g_keep=0.700 p_keep=0.700
+ougp/seed1 epoch=000 loss=2.0795 val=0.2471 test=0.2536 g_keep=1.000 p_keep=1.000
+ougp/seed1 epoch=020 loss=1.9406 val=0.2471 test=0.2536 g_keep=0.983 p_keep=0.983
+ougp/seed1 epoch=040 loss=1.8471 val=0.2484 test=0.2536 g_keep=0.926 p_keep=0.926
+ougp/seed1 epoch=060 loss=1.6839 val=0.3961 test=0.4026 g_keep=0.869 p_keep=0.869
+ougp/seed1 epoch=080 loss=1.5140 val=0.4784 test=0.5175 g_keep=0.811 p_keep=0.811
+ougp/seed1 epoch=100 loss=1.3730 val=0.6392 test=0.6583 g_keep=0.754 p_keep=0.754
+ougp/seed1 epoch=119 loss=1.2753 val=0.7451 test=0.7557 g_keep=0.700 p_keep=0.700
+ougp/seed2 epoch=000 loss=2.0793 val=0.2471 test=0.2536 g_keep=1.000 p_keep=1.000
+ougp/seed2 epoch=020 loss=1.9316 val=0.2471 test=0.2536 g_keep=0.983 p_keep=0.983
+ougp/seed2 epoch=040 loss=1.8262 val=0.2484 test=0.2536 g_keep=0.926 p_keep=0.926
+ougp/seed2 epoch=060 loss=1.6663 val=0.4353 test=0.4443 g_keep=0.869 p_keep=0.869
+ougp/seed2 epoch=080 loss=1.4969 val=0.5765 test=0.5904 g_keep=0.811 p_keep=0.811
+ougp/seed2 epoch=100 loss=1.3595 val=0.6301 test=0.6413 g_keep=0.754 p_keep=0.754
+ougp/seed2 epoch=119 loss=1.2676 val=0.7307 test=0.7310 g_keep=0.700 p_keep=0.700
+Wrote 3 runs to experiments/exp015_photo_recall_steering_sweep/recall_only
+# OUGP Case Study Summary
+
+Dataset: `photo`
+
+| Variant | Best Test Acc | Graph Sparsity | Param Sparsity | Graph Churn | Param Churn |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| ougp | 0.7497 +/- 0.0134 | 0.300 | 0.300 | 0.019 | 0.003 |
+
