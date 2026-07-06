@@ -105,6 +105,14 @@ def run_one(args: argparse.Namespace, dataset, variant: str, seed: int, out_dir:
         event_beta=args.event_beta,
         event_decay=args.event_decay,
         event_top_k=args.event_top_k,
+        recall_gamma=args.recall_gamma,
+        recall_beta=args.recall_beta,
+        recall_decay=args.recall_decay,
+        recall_top_k=args.recall_top_k,
+        use_steering_memory=args.use_steering_memory,
+        steer_gamma=args.steer_gamma,
+        steer_beta=args.steer_beta,
+        steer_lambda=args.steer_lambda,
         hard_masks=args.hard_eval,
         seed=seed,
         **VARIANTS[variant],
@@ -209,6 +217,9 @@ def run_one(args: argparse.Namespace, dataset, variant: str, seed: int, out_dir:
         "param_churn": final.get("param_churn", 0.0),
         "graph_memory_state_norm": float(model.graph_memory.state.norm().item()),
         "param_memory_state_norm": float(model.param_memory.state.norm().item()),
+        "graph_recall_bias_norm": float(model.graph_memory.recall_bias.norm().item()),
+        "param_recall_bias_norm": float(model.param_memory.recall_bias.norm().item()),
+        "steering_memory_state_norm": float(model.steering_memory.state.norm().item()),
         "runtime_sec": time.time() - start_time,
         "num_nodes": data.num_nodes,
         "num_edges": edge_index.size(1),
@@ -304,6 +315,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--event-beta", type=float, default=0.10)
     parser.add_argument("--event-decay", type=float, default=0.95)
     parser.add_argument("--event-top-k", type=int, default=2000)
+    parser.add_argument("--recall-gamma", type=float, default=0.0)
+    parser.add_argument("--recall-beta", type=float, default=0.10)
+    parser.add_argument("--recall-decay", type=float, default=0.95)
+    parser.add_argument("--recall-top-k", type=int, default=2000)
+    parser.add_argument("--use-steering-memory", action="store_true")
+    parser.add_argument("--steer-gamma", type=float, default=0.0)
+    parser.add_argument("--steer-beta", type=float, default=0.10)
+    parser.add_argument("--steer-lambda", type=float, default=0.95)
     parser.add_argument("--temp-start", type=float, default=2.0)
     parser.add_argument("--temp-end", type=float, default=0.5)
     parser.add_argument("--device", default="cpu")
@@ -324,6 +343,8 @@ def validate_gpu_budget(args: argparse.Namespace) -> None:
         raise ValueError("--trace-top-k must be non-negative.")
     if args.event_top_k < 0:
         raise ValueError("--event-top-k must be non-negative.")
+    if args.recall_top_k < 0:
+        raise ValueError("--recall-top-k must be non-negative.")
     if args.max_gpus > 4:
         raise ValueError("This workspace policy allows at most 4 GPUs per run.")
     if args.device.startswith("cuda"):

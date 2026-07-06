@@ -68,6 +68,15 @@ class OUGPConfig:
     event_beta: float = 0.10
     event_decay: float = 0.95
     event_top_k: int = 2000
+    recall_gamma: float = 0.0
+    recall_beta: float = 0.10
+    recall_decay: float = 0.95
+    recall_top_k: int = 2000
+    use_steering_memory: bool = False
+    steer_context_dim: int = 10
+    steer_gamma: float = 0.0
+    steer_beta: float = 0.10
+    steer_lambda: float = 0.95
     hard_masks: bool = False
     use_graph_pruning: bool = True
     use_param_pruning: bool = True
@@ -88,6 +97,9 @@ class OnlinePruningMemory(nn.Module):
         event_items: int = 0,
         event_beta: float = 0.10,
         event_decay: float = 0.95,
+        recall_items: int = 0,
+        recall_beta: float = 0.10,
+        recall_decay: float = 0.95,
     ):
         super().__init__()
         self.context_dim = context_dim
@@ -96,6 +108,8 @@ class OnlinePruningMemory(nn.Module):
         self.write_lambda = write_lambda
         self.event_beta = event_beta
         self.event_decay = event_decay
+        self.recall_beta = recall_beta
+        self.recall_decay = recall_decay
         self.q_proj = nn.Linear(context_dim, rank)
         self.k_proj = nn.Linear(context_dim, rank)
         self.v_proj = nn.Linear(context_dim, rank)
@@ -103,10 +117,12 @@ class OnlinePruningMemory(nn.Module):
         self.utility_head = nn.Linear(rank, 1, bias=False)
         self.register_buffer("state", torch.zeros(rank, rank))
         self.register_buffer("event_bias", torch.zeros(max(0, event_items)))
+        self.register_buffer("recall_bias", torch.zeros(max(0, recall_items)))
 
     def reset_state(self) -> None:
         self.state.zero_()
         self.event_bias.zero_()
+        self.recall_bias.zero_()
 
     def project_qkv(self, context: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         q = l2_normalize(torch.tanh(self.q_proj(context)))
@@ -149,6 +165,12 @@ class OnlinePruningMemory(nn.Module):
         return self.event_bias.to(device=reference.device, dtype=reference.dtype)
 
     @torch.no_grad()
+    def recall_correction(self, reference: torch.Tensor) -> torch.Tensor:
+        if self.recall_bias.numel() != reference.numel():
+            return torch.zeros_like(reference)
+        return self.recall_bias.to(device=reference.device, dtype=reference.dtype)
+
+    @torch.no_grad()
     def write_events(self, event_delta: torch.Tensor, top_k: int) -> dict[str, float]:
         if self.event_bias.numel() == 0 or event_delta.numel() == 0:
             return {"updates": 0.0, "bias_norm": float(self.event_bias.norm().item())}
@@ -174,6 +196,106 @@ class OnlinePruningMemory(nn.Module):
             "bias_mean": float(self.event_bias.mean().item()),
             "bias_abs_mean": float(self.event_bias.abs().mean().item()),
             "bias_norm": float(self.event_bias.norm().item()),
+        }
+
+    @torch.no_grad()
+    def write_recall(self, recall_delta: torch.Tensor, top_k: int) -> dict[str, float]:
+        if self.recall_bias.numel() == 0 or recall_delta.numel() == 0:
+            return {"updates": 0.0, "bias_norm": float(self.recall_bias.norm().item())}
+        if self.recall_bias.numel() != recall_delta.numel():
+            raise ValueError("recall_delta shape must match recall_bias shape.")
+
+        self.recall_bias.mul_(self.recall_decay)
+        recall_delta = recall_delta.detach().float().to(self.recall_bias.device)
+        active = recall_delta.abs() > 0
+        if not bool(active.any().item()):
+            return {"updates": 0.0, "bias_norm": float(self.recall_bias.norm().item())}
+
+        if top_k > 0 and int(active.sum().item()) > top_k:
+            indices = torch.topk(recall_delta.abs(), k=top_k).indices
+            self.recall_bias[indices] += self.recall_beta * recall_delta[indices]
+            updates = float(indices.numel())
+        else:
+            self.recall_bias.add_(self.recall_beta * recall_delta)
+            updates = float(active.sum().item())
+        self.recall_bias.clamp_(-5.0, 5.0)
+        return {
+            "updates": updates,
+            "bias_mean": float(self.recall_bias.mean().item()),
+            "bias_abs_mean": float(self.recall_bias.abs().mean().item()),
+            "bias_norm": float(self.recall_bias.norm().item()),
+        }
+
+
+class MemorySteeringMLP(nn.Module):
+    """Delta-memory-style global steering state for hidden representation repair."""
+
+    def __init__(
+        self,
+        context_dim: int,
+        rank: int,
+        hidden_dim: int,
+        write_beta: float,
+        write_lambda: float,
+    ):
+        super().__init__()
+        self.context_dim = context_dim
+        self.rank = rank
+        self.hidden_dim = hidden_dim
+        self.write_beta = write_beta
+        self.write_lambda = write_lambda
+        self.q_proj = nn.Linear(context_dim, rank)
+        self.k_proj = nn.Linear(context_dim, rank)
+        self.v_proj = nn.Linear(context_dim, rank)
+        self.beta_proj = nn.Linear(context_dim, rank)
+        self.target_proj = nn.Linear(hidden_dim, rank)
+        self.steer_head = nn.Sequential(
+            nn.Linear(rank, hidden_dim),
+            nn.Tanh(),
+            nn.Linear(hidden_dim, hidden_dim),
+        )
+        nn.init.zeros_(self.steer_head[-1].weight)
+        nn.init.zeros_(self.steer_head[-1].bias)
+        self.register_buffer("state", torch.zeros(rank, rank))
+
+    def reset_state(self) -> None:
+        self.state.zero_()
+
+    def project_qkv(self, context: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        q = l2_normalize(torch.tanh(self.q_proj(context)))
+        k = l2_normalize(torch.tanh(self.k_proj(context)))
+        v = self.v_proj(context)
+        beta = torch.sigmoid(self.beta_proj(context))
+        return q, k, v, beta
+
+    def read(self, context: torch.Tensor) -> tuple[torch.Tensor, dict[str, float]]:
+        q, _, _, _ = self.project_qkv(context)
+        read_vec = q @ self.state.t()
+        delta_h = self.steer_head(read_vec).squeeze(0)
+        stats = {
+            "steer_delta_norm": float(delta_h.detach().float().norm().item()),
+            "steer_state_norm": float(self.state.detach().float().norm().item()),
+        }
+        return delta_h, stats
+
+    @torch.no_grad()
+    def write(self, context: torch.Tensor, target_delta: torch.Tensor) -> dict[str, float]:
+        if context.numel() == 0 or target_delta.numel() == 0:
+            return {"target_norm": 0.0, "residual_mean": 0.0, "state_norm": float(self.state.norm().item())}
+        _, k, v, beta = self.project_qkv(context.detach())
+        target_value = self.target_proj(target_delta.detach().float().unsqueeze(0))
+        pred_value = k @ self.state.t()
+        residual = target_value - pred_value
+        write_value = v + residual.tanh()
+        delta_state = torch.einsum("br,bk->rk", write_value, k) / max(1, context.size(0))
+        beta_vec = beta.mean(dim=0).unsqueeze(-1)
+        self.state.mul_(self.write_lambda).add_(self.write_beta * beta_vec * delta_state)
+        self.state.clamp_(-5.0, 5.0)
+        return {
+            "target_norm": float(target_delta.detach().float().norm().item()),
+            "residual_mean": float(residual.abs().mean().item()),
+            "beta_mean": float(beta.mean().item()),
+            "state_norm": float(self.state.norm().item()),
         }
 
 
@@ -203,12 +325,25 @@ class OUGPGCN(nn.Module):
             event_items=cfg.num_edges,
             event_beta=cfg.event_beta,
             event_decay=cfg.event_decay,
+            recall_items=cfg.num_edges,
+            recall_beta=cfg.recall_beta,
+            recall_decay=cfg.recall_decay,
         )
         self.param_memory = OnlinePruningMemory(
             cfg.param_context_dim,
             cfg.memory_rank,
             cfg.write_beta,
             cfg.write_lambda,
+            recall_items=cfg.hidden_dim,
+            recall_beta=cfg.recall_beta,
+            recall_decay=cfg.recall_decay,
+        )
+        self.steering_memory = MemorySteeringMLP(
+            cfg.steer_context_dim,
+            cfg.memory_rank,
+            cfg.hidden_dim,
+            cfg.steer_beta,
+            cfg.steer_lambda,
         )
 
         self.last_graph_score: torch.Tensor | None = None
@@ -221,10 +356,15 @@ class OUGPGCN(nn.Module):
         self.prev_param_mask: torch.Tensor | None = None
         self.trace_prev_graph_mask: torch.Tensor | None = None
         self.event_prev_graph_mask: torch.Tensor | None = None
+        self.recall_prev_graph_mask: torch.Tensor | None = None
+        self.recall_prev_param_mask: torch.Tensor | None = None
+        self.last_steering_context: torch.Tensor | None = None
+        self.last_steered_hidden: torch.Tensor | None = None
 
     def reset_memory(self) -> None:
         self.graph_memory.reset_state()
         self.param_memory.reset_state()
+        self.steering_memory.reset_state()
 
     def edge_context(self, param_keep: torch.Tensor) -> torch.Tensor:
         row, col = self.base_edge_index
@@ -266,6 +406,10 @@ class OUGPGCN(nn.Module):
             param_score = param_score + self.cfg.param_gamma * param_corr
             if self.cfg.use_graph_pruning and self.cfg.event_gamma != 0.0:
                 graph_score = graph_score + self.cfg.event_gamma * self.graph_memory.event_correction(graph_score)
+            if self.cfg.use_graph_pruning and self.cfg.recall_gamma != 0.0:
+                graph_score = graph_score + self.cfg.recall_gamma * self.graph_memory.recall_correction(graph_score)
+            if self.cfg.use_param_pruning and self.cfg.recall_gamma != 0.0:
+                param_score = param_score + self.cfg.recall_gamma * self.param_memory.recall_correction(param_score)
         graph_keep_target = self.cfg.graph_target_keep
         param_keep_target = self.cfg.param_target_keep
 
@@ -298,6 +442,32 @@ class OUGPGCN(nn.Module):
         }
         return graph_mask, param_mask, stats
 
+    def steering_context(
+        self,
+        hidden: torch.Tensor,
+        graph_mask: torch.Tensor,
+        param_mask: torch.Tensor,
+    ) -> torch.Tensor:
+        hidden_detached = hidden.detach().float()
+        graph_mask_detached = graph_mask.detach().float()
+        param_mask_detached = param_mask.detach().float()
+        values = [
+            graph_mask_detached.mean(),
+            param_mask_detached.mean(),
+            hidden.new_tensor(self.cfg.graph_target_keep).float(),
+            hidden.new_tensor(self.cfg.param_target_keep).float(),
+            graph_mask_detached.std(unbiased=False),
+            param_mask_detached.std(unbiased=False),
+            hidden_detached.norm(dim=-1).mean(),
+            hidden_detached.std(unbiased=False),
+            self.graph_memory.state.detach().float().norm().to(hidden.device),
+            self.param_memory.state.detach().float().norm().to(hidden.device),
+        ]
+        context = torch.stack([v.to(device=hidden.device, dtype=hidden.dtype) for v in values]).unsqueeze(0)
+        if context.size(-1) != self.cfg.steer_context_dim:
+            raise ValueError("steering_context size must match cfg.steer_context_dim.")
+        return context
+
     def forward(self, x: torch.Tensor, temperature: float = 1.0) -> tuple[torch.Tensor, dict[str, float]]:
         graph_mask, param_mask, stats = self.masks(temperature)
         num_nodes = x.size(0)
@@ -309,6 +479,17 @@ class OUGPGCN(nn.Module):
 
         h = sparse_gcn_mm(edge_index, norm_weight, x, num_nodes)
         h = self.lin1(h)
+        self.last_steering_context = None
+        self.last_steered_hidden = None
+        if self.cfg.use_memory and self.cfg.use_steering_memory and self.cfg.steer_gamma != 0.0:
+            steering_context = self.steering_context(h, graph_mask, param_mask)
+            delta_h, steering_stats = self.steering_memory.read(steering_context)
+            h = h + self.cfg.steer_gamma * delta_h.unsqueeze(0).to(dtype=h.dtype, device=h.device)
+            self.last_steering_context = steering_context.detach()
+            if self.training and h.requires_grad:
+                h.retain_grad()
+                self.last_steered_hidden = h
+            stats.update({f"steering_{key}": value for key, value in steering_stats.items()})
         h = F.relu(h) * param_mask
         h = F.dropout(h, p=0.5, training=self.training)
         h = sparse_gcn_mm(edge_index, norm_weight, h, num_nodes)
@@ -407,6 +588,63 @@ class OUGPGCN(nn.Module):
         event_delta = mask_drop * scaled_importance.clamp(-3.0, 3.0)
         event_stats = self.graph_memory.write_events(event_delta, self.cfg.event_top_k)
         return {f"graph_event_{key}": value for key, value in event_stats.items()}
+
+    @torch.no_grad()
+    def recall_delta_from_drop(self, previous_mask: torch.Tensor, current_mask: torch.Tensor, utility: torch.Tensor) -> torch.Tensor:
+        mask_drop = (previous_mask.to(current_mask.device) - current_mask).clamp_min(0.0)
+        if not bool((mask_drop > 0).any().item()):
+            return torch.zeros_like(current_mask)
+        utility = utility.detach().float().to(current_mask.device)
+        scaled_utility = (utility - utility.mean()) / utility.std(unbiased=False).clamp_min(1e-6)
+        important_after_drop = scaled_utility.clamp_min(0.0).clamp_max(3.0)
+        return mask_drop * important_after_drop
+
+    @torch.no_grad()
+    def write_graph_recall_memory(self, graph_utility: torch.Tensor) -> dict[str, float]:
+        if self.last_graph_mask is None or not self.cfg.use_graph_pruning:
+            return {}
+        graph_mask = self.last_graph_mask.detach().float()
+        if self.recall_prev_graph_mask is None:
+            self.recall_prev_graph_mask = graph_mask.clone()
+            return {
+                "graph_recall_updates": 0.0,
+                "graph_recall_bias_norm": float(self.graph_memory.recall_bias.norm().item()),
+            }
+        recall_delta = self.recall_delta_from_drop(self.recall_prev_graph_mask, graph_mask, graph_utility)
+        self.recall_prev_graph_mask = graph_mask.clone()
+        recall_stats = self.graph_memory.write_recall(recall_delta, self.cfg.recall_top_k)
+        return {f"graph_recall_{key}": value for key, value in recall_stats.items()}
+
+    @torch.no_grad()
+    def write_param_recall_memory(self, param_utility: torch.Tensor) -> dict[str, float]:
+        if self.last_param_mask is None or not self.cfg.use_param_pruning:
+            return {}
+        param_mask = self.last_param_mask.detach().float()
+        if self.recall_prev_param_mask is None:
+            self.recall_prev_param_mask = param_mask.clone()
+            return {
+                "param_recall_updates": 0.0,
+                "param_recall_bias_norm": float(self.param_memory.recall_bias.norm().item()),
+            }
+        recall_delta = self.recall_delta_from_drop(self.recall_prev_param_mask, param_mask, param_utility)
+        self.recall_prev_param_mask = param_mask.clone()
+        recall_stats = self.param_memory.write_recall(recall_delta, self.cfg.recall_top_k)
+        return {f"param_recall_{key}": value for key, value in recall_stats.items()}
+
+    @torch.no_grad()
+    def write_steering_memory(self) -> dict[str, float]:
+        if (
+            not self.cfg.use_steering_memory
+            or self.last_steering_context is None
+            or self.last_steered_hidden is None
+            or self.last_steered_hidden.grad is None
+        ):
+            return {}
+        grad = self.last_steered_hidden.grad.detach().float()
+        target_delta = -grad.mean(dim=0)
+        target_delta = target_delta / target_delta.norm().clamp_min(1e-6)
+        steering_stats = self.steering_memory.write(self.last_steering_context, target_delta)
+        return {f"steering_memory_{key}": value for key, value in steering_stats.items()}
 
     @torch.no_grad()
     def graph_trace_snapshot(
@@ -515,6 +753,7 @@ class OUGPGCN(nn.Module):
             graph_stats = self.graph_memory.write(graph_ctx, graph_utility)
             stats.update({f"graph_memory_{key}": value for key, value in graph_stats.items()})
             stats.update(self.write_graph_event_memory(graph_utility))
+            stats.update(self.write_graph_recall_memory(graph_utility))
         if param_utility is not None:
             param_cross_ctx = (
                 self.last_graph_mask.detach().mean()
@@ -524,4 +763,6 @@ class OUGPGCN(nn.Module):
             param_ctx = self.param_context(param_cross_ctx)
             param_stats = self.param_memory.write(param_ctx, param_utility)
             stats.update({f"param_memory_{key}": value for key, value in param_stats.items()})
+            stats.update(self.write_param_recall_memory(param_utility))
+        stats.update(self.write_steering_memory())
         return stats
