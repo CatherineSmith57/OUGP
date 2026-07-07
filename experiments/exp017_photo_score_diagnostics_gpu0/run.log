@@ -1,0 +1,22 @@
+ougp/seed0 epoch=000 loss=2.0795 val=0.2510 test=0.2559 g_keep=1.000 p_keep=1.000 param_logits_mean=2.000000 param_logits_std=0.000000 param_memory_correction_mean=0.000000 param_memory_correction_std=0.000000 recall_correction_mean=0.000000 recall_correction_std=0.000000
+ougp/seed0 epoch=010 loss=2.0055 val=0.2484 test=0.2538 g_keep=1.000 p_keep=1.000 param_logits_mean=2.000000 param_logits_std=0.000000 param_memory_correction_mean=0.000000 param_memory_correction_std=0.000000 recall_correction_mean=0.000000 recall_correction_std=0.000000
+ougp/seed0 epoch=020 loss=1.9402 val=0.2471 test=0.2536 g_keep=0.983 p_keep=0.983 param_logits_mean=1.940078 param_logits_std=0.000012 param_memory_correction_mean=0.025060 param_memory_correction_std=0.002310 recall_correction_mean=0.000574 recall_correction_std=0.000750
+ougp/seed0 epoch=030 loss=1.8994 val=0.2471 test=0.2536 g_keep=0.954 p_keep=0.954 param_logits_mean=1.841058 param_logits_std=0.000182 param_memory_correction_mean=0.215285 param_memory_correction_std=0.003548 recall_correction_mean=0.001318 recall_correction_std=0.001451
+ougp/seed0 epoch=040 loss=1.8441 val=0.2471 test=0.2536 g_keep=0.926 p_keep=0.926 param_logits_mean=1.744641 param_logits_std=0.000726 param_memory_correction_mean=0.691937 param_memory_correction_std=0.005998 recall_correction_mean=0.001718 recall_correction_std=0.001914
+ougp/seed0 epoch=050 loss=1.7617 val=0.3020 test=0.3139 g_keep=0.897 p_keep=0.897 param_logits_mean=1.654848 param_logits_std=0.002781 param_memory_correction_mean=1.329251 param_memory_correction_std=0.001961 recall_correction_mean=0.001961 recall_correction_std=0.002266
+ougp/seed0 epoch=060 loss=1.6749 val=0.4366 test=0.4492 g_keep=0.869 p_keep=0.869 param_logits_mean=1.581298 param_logits_std=0.010333 param_memory_correction_mean=2.203725 param_memory_correction_std=0.004233 recall_correction_mean=0.002053 recall_correction_std=0.002426
+ougp/seed0 epoch=070 loss=1.5835 val=0.4863 test=0.5087 g_keep=0.840 p_keep=0.840 param_logits_mean=1.535945 param_logits_std=0.030494 param_memory_correction_mean=3.376041 param_memory_correction_std=0.005176 recall_correction_mean=0.002022 recall_correction_std=0.002372
+ougp/seed0 epoch=080 loss=1.5056 val=0.5582 test=0.5721 g_keep=0.811 p_keep=0.811 param_logits_mean=1.540246 param_logits_std=0.067010 param_memory_correction_mean=4.851274 param_memory_correction_std=0.002265 recall_correction_mean=0.001869 recall_correction_std=0.002078
+ougp/seed0 epoch=090 loss=1.4242 val=0.6222 test=0.6364 g_keep=0.783 p_keep=0.783 param_logits_mean=1.597776 param_logits_std=0.113796 param_memory_correction_mean=6.724977 param_memory_correction_std=0.001750 recall_correction_mean=0.001615 recall_correction_std=0.001705
+ougp/seed0 epoch=100 loss=1.3647 val=0.6641 test=0.6760 g_keep=0.754 p_keep=0.754 param_logits_mean=1.707752 param_logits_std=0.157090 param_memory_correction_mean=9.044641 param_memory_correction_std=0.002356 recall_correction_mean=0.001364 recall_correction_std=0.001430
+ougp/seed0 epoch=110 loss=1.2978 val=0.7072 test=0.7185 g_keep=0.726 p_keep=0.726 param_logits_mean=1.850572 param_logits_std=0.191873 param_memory_correction_mean=11.769861 param_memory_correction_std=0.002145 recall_correction_mean=0.001192 recall_correction_std=0.001244
+ougp/seed0 epoch=119 loss=1.2645 val=0.7569 test=0.7655 g_keep=0.700 p_keep=0.700 param_logits_mean=1.999152 param_logits_std=0.216129 param_memory_correction_mean=14.849304 param_memory_correction_std=0.001909 recall_correction_mean=0.001108 recall_correction_std=0.001169
+Wrote 1 runs to experiments/exp017_photo_score_diagnostics_gpu0
+# OUGP Case Study Summary
+
+Dataset: `photo`
+
+| Variant | Best Test Acc | Graph Sparsity | Param Sparsity | Graph Churn | Param Churn |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| ougp | 0.7642 +/- 0.0000 | 0.300 | 0.300 | 0.019 | 0.003 |
+

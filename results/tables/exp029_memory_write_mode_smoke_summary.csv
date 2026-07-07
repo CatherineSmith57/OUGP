@@ -1,0 +1,4 @@
+dataset,backbone,variant,memory_write_mode,best_test_acc,graph_sparsity,param_sparsity,message_cost_reduction,parameter_cost_reduction,graph_memory_state_norm,param_memory_state_norm,seeds,epochs
+cora,gcn,ougp,residual,0.5190,0.200,0.200,0.161,0.200,0.0020,0.2018,0,4
+cora,gcn,ougp,feature,0.5180,0.200,0.200,0.161,0.200,0.1068,0.7829,0,4
+cora,gcn,ougp,none,0.5180,0.200,0.200,0.161,0.200,0.0000,0.0000,0,4

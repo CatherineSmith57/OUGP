@@ -1,0 +1,3 @@
+dataset,backbone,variant,best_test_acc,graph_sparsity,param_sparsity,graph_churn,param_churn,seeds,epochs
+photo,sage,dense,0.3399,0.000,0.000,0.000,0.000,0,20
+photo,sage,ougp,0.2570,0.300,0.300,0.020,0.020,0,20

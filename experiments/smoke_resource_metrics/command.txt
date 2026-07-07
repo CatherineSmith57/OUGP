@@ -1,0 +1,1 @@
+/home/shizitong/miniconda3/envs/tianjiaying/bin/python scripts/run_case_study.py --dataset cora --data-root data/raw/planetoid --out-dir experiments/smoke_resource_metrics --variants dense ougp --seeds 0 --epochs 3 --warmup-epochs 1 --hidden-dim 16 --memory-rank 4 --graph-sparsity 0.20 --param-sparsity 0.20 --backbone gcn --budget-lambda 0.0 --device cpu --verbose --log-every 1

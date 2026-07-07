@@ -1,0 +1,2 @@
+dataset,backbone,variant,best_test_acc,graph_sparsity,param_sparsity,graph_churn,param_churn,original_num_edges,edge_sample_size,seeds,epochs
+ogbn-arxiv,gat,ougp,0.2289,0.200,0.200,0.100,0.100,1166243,20000,0,3

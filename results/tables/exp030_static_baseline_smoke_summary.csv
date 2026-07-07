@@ -1,0 +1,5 @@
+dataset,backbone,variant,best_test_acc,graph_sparsity,param_sparsity,message_cost_reduction,parameter_cost_reduction,graph_churn,param_churn,graph_score_init,param_score_init,freeze_pruning_scores,seeds,epochs
+cora,gcn,random_static,0.5220,0.200,0.200,0.161,0.200,0.067,0.101,random,random,true,0,4
+cora,gcn,degree_magnitude_static,0.5180,0.200,0.200,0.161,0.200,0.067,0.073,degree,magnitude,true,0,4
+cora,gcn,similarity_magnitude_static,0.5200,0.200,0.200,0.161,0.200,0.067,0.073,similarity,magnitude,true,0,4
+cora,gcn,ougp,0.5190,0.200,0.200,0.161,0.200,0.067,0.067,constant,constant,false,0,4

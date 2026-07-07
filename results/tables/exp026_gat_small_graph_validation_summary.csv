@@ -1,0 +1,7 @@
+dataset,backbone,variant,best_test_acc,graph_sparsity,param_sparsity,graph_churn,param_churn,seeds,epochs
+cora,gat,dense,0.7780,0.000,0.000,0.000,0.000,0,20
+cora,gat,ougp,0.7680,0.300,0.300,0.020,0.020,0,20
+citeseer,gat,dense,0.5120,0.000,0.000,0.000,0.000,0,20
+citeseer,gat,ougp,0.5250,0.300,0.300,0.020,0.020,0,20
+pubmed,gat,dense,0.7220,0.000,0.000,0.000,0.000,0,20
+pubmed,gat,ougp,0.7240,0.300,0.300,0.020,0.020,0,20

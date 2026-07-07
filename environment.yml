@@ -9,5 +9,5 @@ dependencies:
   - pytorch
   - pip
   - pip:
+      - pytest
       - scikit-learn
-

@@ -1,0 +1,300 @@
+========== MEMORY READ DEBUG ==========
+context shape: torch.Size([238162, 15])
+memory state shape: torch.Size([16, 16])
+memory state mean/std: 0.0 0.0
+======================================
+========== MEMORY READ DEBUG ==========
+context shape: torch.Size([64, 6])
+memory state shape: torch.Size([16, 16])
+memory state mean/std: 0.0 0.0
+======================================
+========== PARAM MEMORY DEBUG ==========
+param_cross_ctx shape: torch.Size([])
+param_cross_ctx: tensor(0.8808, device='cuda:0')
+param_ctx shape: torch.Size([64, 6])
+param_ctx mean/std: 0.6743305921554565 0.29866698384284973
+param_corr shape: torch.Size([64])
+param_corr mean/std: 0.0 0.0
+param_corr first 20: tensor([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+       device='cuda:0')
+param_corr min/max: 0.0 0.0
+========================================
+========== SCORE CHANGE DEBUG ==========
+score_delta mean/std: 0.0 0.0
+score_delta first 20: tensor([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+       device='cuda:0')
+========================================
+========== MEMORY READ DEBUG ==========
+context shape: torch.Size([238162, 15])
+memory state shape: torch.Size([16, 16])
+memory state mean/std: 4.089371619109272e-10 6.885313652560399e-09
+======================================
+========== MEMORY READ DEBUG ==========
+context shape: torch.Size([64, 6])
+memory state shape: torch.Size([16, 16])
+memory state mean/std: 3.3797430205595447e-06 9.165539813693613e-05
+======================================
+========== PARAM MEMORY DEBUG ==========
+param_cross_ctx shape: torch.Size([])
+param_cross_ctx: tensor(0.8797, device='cuda:0')
+param_ctx shape: torch.Size([64, 6])
+param_ctx mean/std: 0.6495907306671143 0.3151244819164276
+param_corr shape: torch.Size([64])
+param_corr mean/std: -1.4801209545112215e-05 2.6848197194340173e-06
+param_corr first 20: tensor([-1.8640e-05, -1.9095e-05, -1.8983e-05, -1.8875e-05, -1.8850e-05,
+        -1.8408e-05, -1.8528e-05, -1.8147e-05, -1.7941e-05, -1.7652e-05,
+        -1.7839e-05, -1.7710e-05, -1.7226e-05, -1.7729e-05, -1.7433e-05,
+        -1.7370e-05, -1.6936e-05, -1.6748e-05, -1.6622e-05, -1.6844e-05],
+       device='cuda:0')
+param_corr min/max: -1.9095361494692042e-05 -9.905805200105533e-06
+========================================
+========== SCORE CHANGE DEBUG ==========
+score_delta mean/std: -2.960241909022443e-05 5.369639438868035e-06
+score_delta first 20: tensor([-3.7280e-05, -3.8191e-05, -3.7966e-05, -3.7750e-05, -3.7700e-05,
+        -3.6816e-05, -3.7056e-05, -3.6293e-05, -3.5883e-05, -3.5305e-05,
+        -3.5678e-05, -3.5420e-05, -3.4453e-05, -3.5458e-05, -3.4866e-05,
+        -3.4740e-05, -3.3871e-05, -3.3496e-05, -3.3243e-05, -3.3689e-05],
+       device='cuda:0')
+========================================
+ougp/seed0 epoch=000 loss=2.0795 val=0.2510 test=0.2557 g_keep=0.940 p_keep=0.940 param_logits_mean=1.990000 param_logits_std=0.000000 param_memory_correction_mean=-0.000015 param_memory_correction_std=0.000003 recall_correction_mean=0.000000 recall_correction_std=0.000000
+========== MEMORY READ DEBUG ==========
+context shape: torch.Size([238162, 15])
+memory state shape: torch.Size([16, 16])
+memory state mean/std: 4.089371619109272e-10 6.885313652560399e-09
+======================================
+========== MEMORY READ DEBUG ==========
+context shape: torch.Size([64, 6])
+memory state shape: torch.Size([16, 16])
+memory state mean/std: 3.3797430205595447e-06 9.165539813693613e-05
+======================================
+========== PARAM MEMORY DEBUG ==========
+param_cross_ctx shape: torch.Size([])
+param_cross_ctx: tensor(0.8797, device='cuda:0')
+param_ctx shape: torch.Size([64, 6])
+param_ctx mean/std: 0.6495907306671143 0.3151244819164276
+param_corr shape: torch.Size([64])
+param_corr mean/std: -1.4801209545112215e-05 2.6848197194340173e-06
+param_corr first 20: tensor([-1.8640e-05, -1.9095e-05, -1.8983e-05, -1.8875e-05, -1.8850e-05,
+        -1.8408e-05, -1.8528e-05, -1.8147e-05, -1.7941e-05, -1.7652e-05,
+        -1.7839e-05, -1.7710e-05, -1.7226e-05, -1.7729e-05, -1.7433e-05,
+        -1.7370e-05, -1.6936e-05, -1.6748e-05, -1.6622e-05, -1.6844e-05],
+       device='cuda:0')
+param_corr min/max: -1.9095361494692042e-05 -9.905805200105533e-06
+========================================
+========== SCORE CHANGE DEBUG ==========
+score_delta mean/std: -2.960241909022443e-05 5.369639438868035e-06
+score_delta first 20: tensor([-3.7280e-05, -3.8191e-05, -3.7966e-05, -3.7750e-05, -3.7700e-05,
+        -3.6816e-05, -3.7056e-05, -3.6293e-05, -3.5883e-05, -3.5305e-05,
+        -3.5678e-05, -3.5420e-05, -3.4453e-05, -3.5458e-05, -3.4866e-05,
+        -3.4740e-05, -3.3871e-05, -3.3496e-05, -3.3243e-05, -3.3689e-05],
+       device='cuda:0')
+========================================
+========== MEMORY READ DEBUG ==========
+context shape: torch.Size([238162, 15])
+memory state shape: torch.Size([16, 16])
+memory state mean/std: 1.686466610806292e-08 8.531770845365827e-07
+======================================
+========== MEMORY READ DEBUG ==========
+context shape: torch.Size([64, 6])
+memory state shape: torch.Size([16, 16])
+memory state mean/std: -5.47879608348012e-08 0.0046782405115664005
+======================================
+========== PARAM MEMORY DEBUG ==========
+param_cross_ctx shape: torch.Size([])
+param_cross_ctx: tensor(0.8787, device='cuda:0')
+param_ctx shape: torch.Size([64, 6])
+param_ctx mean/std: 0.6349382400512695 0.33013916015625
+param_corr shape: torch.Size([64])
+param_corr mean/std: -0.00043814012315124273 6.422548904083669e-05
+param_corr first 20: tensor([-0.0005, -0.0005, -0.0005, -0.0005, -0.0005, -0.0005, -0.0005, -0.0005,
+        -0.0005, -0.0005, -0.0005, -0.0005, -0.0005, -0.0004, -0.0004, -0.0005,
+        -0.0005, -0.0005, -0.0005, -0.0005], device='cuda:0')
+param_corr min/max: -0.000544983078725636 -0.0002991028013639152
+========================================
+========== SCORE CHANGE DEBUG ==========
+score_delta mean/std: -0.0008762802463024855 0.00012845097808167338
+score_delta first 20: tensor([-0.0011, -0.0009, -0.0009, -0.0010, -0.0009, -0.0010, -0.0009, -0.0010,
+        -0.0010, -0.0011, -0.0010, -0.0010, -0.0010, -0.0009, -0.0009, -0.0009,
+        -0.0010, -0.0009, -0.0010, -0.0010], device='cuda:0')
+========================================
+ougp/seed0 epoch=001 loss=2.0778 val=0.2484 test=0.2538 g_keep=0.880 p_keep=0.880 param_logits_mean=1.980002 param_logits_std=0.000001 param_memory_correction_mean=-0.000438 param_memory_correction_std=0.000064 recall_correction_mean=0.001949 recall_correction_std=0.004245
+========== MEMORY READ DEBUG ==========
+context shape: torch.Size([238162, 15])
+memory state shape: torch.Size([16, 16])
+memory state mean/std: 1.686466610806292e-08 8.531770845365827e-07
+======================================
+========== MEMORY READ DEBUG ==========
+context shape: torch.Size([64, 6])
+memory state shape: torch.Size([16, 16])
+memory state mean/std: -5.47879608348012e-08 0.0046782405115664005
+======================================
+========== PARAM MEMORY DEBUG ==========
+param_cross_ctx shape: torch.Size([])
+param_cross_ctx: tensor(0.8787, device='cuda:0')
+param_ctx shape: torch.Size([64, 6])
+param_ctx mean/std: 0.6349382400512695 0.33013916015625
+param_corr shape: torch.Size([64])
+param_corr mean/std: -0.00043814012315124273 6.422548904083669e-05
+param_corr first 20: tensor([-0.0005, -0.0005, -0.0005, -0.0005, -0.0005, -0.0005, -0.0005, -0.0005,
+        -0.0005, -0.0005, -0.0005, -0.0005, -0.0005, -0.0004, -0.0004, -0.0005,
+        -0.0005, -0.0005, -0.0005, -0.0005], device='cuda:0')
+param_corr min/max: -0.000544983078725636 -0.0002991028013639152
+========================================
+========== SCORE CHANGE DEBUG ==========
+score_delta mean/std: -0.0008762802463024855 0.00012845097808167338
+score_delta first 20: tensor([-0.0011, -0.0009, -0.0009, -0.0010, -0.0009, -0.0010, -0.0009, -0.0010,
+        -0.0010, -0.0011, -0.0010, -0.0010, -0.0010, -0.0009, -0.0009, -0.0009,
+        -0.0010, -0.0009, -0.0010, -0.0010], device='cuda:0')
+========================================
+========== MEMORY READ DEBUG ==========
+context shape: torch.Size([238162, 15])
+memory state shape: torch.Size([16, 16])
+memory state mean/std: 3.1839752523410425e-07 9.374984983878676e-06
+======================================
+========== MEMORY READ DEBUG ==========
+context shape: torch.Size([64, 6])
+memory state shape: torch.Size([16, 16])
+memory state mean/std: 1.111676829168573e-05 0.007702216040343046
+======================================
+========== PARAM MEMORY DEBUG ==========
+param_cross_ctx shape: torch.Size([])
+param_cross_ctx: tensor(0.8776, device='cuda:0')
+param_ctx shape: torch.Size([64, 6])
+param_ctx mean/std: 0.6346851587295532 0.33566778898239136
+param_corr shape: torch.Size([64])
+param_corr mean/std: -0.0007028426043689251 0.00012857520778197795
+param_corr first 20: tensor([-0.0009, -0.0007, -0.0008, -0.0008, -0.0007, -0.0008, -0.0008, -0.0009,
+        -0.0008, -0.0009, -0.0009, -0.0008, -0.0008, -0.0007, -0.0007, -0.0008,
+        -0.0008, -0.0007, -0.0008, -0.0008], device='cuda:0')
+param_corr min/max: -0.0009237269405275583 -0.0004271392244845629
+========================================
+========== SCORE CHANGE DEBUG ==========
+score_delta mean/std: -0.0014056852087378502 0.0002571504155639559
+score_delta first 20: tensor([-0.0017, -0.0015, -0.0015, -0.0016, -0.0015, -0.0016, -0.0015, -0.0017,
+        -0.0016, -0.0018, -0.0017, -0.0017, -0.0016, -0.0015, -0.0014, -0.0016,
+        -0.0017, -0.0015, -0.0015, -0.0016], device='cuda:0')
+========================================
+ougp/seed0 epoch=002 loss=2.0755 val=0.2484 test=0.2539 g_keep=0.820 p_keep=0.820 param_logits_mean=1.970011 param_logits_std=0.000009 param_memory_correction_mean=-0.000703 param_memory_correction_std=0.000129 recall_correction_mean=0.003899 recall_correction_std=0.008376
+========== MEMORY READ DEBUG ==========
+context shape: torch.Size([238162, 15])
+memory state shape: torch.Size([16, 16])
+memory state mean/std: 3.1839752523410425e-07 9.374984983878676e-06
+======================================
+========== MEMORY READ DEBUG ==========
+context shape: torch.Size([64, 6])
+memory state shape: torch.Size([16, 16])
+memory state mean/std: 1.111676829168573e-05 0.007702216040343046
+======================================
+========== PARAM MEMORY DEBUG ==========
+param_cross_ctx shape: torch.Size([])
+param_cross_ctx: tensor(0.8776, device='cuda:0')
+param_ctx shape: torch.Size([64, 6])
+param_ctx mean/std: 0.6346851587295532 0.33566778898239136
+param_corr shape: torch.Size([64])
+param_corr mean/std: -0.0007028426043689251 0.00012857520778197795
+param_corr first 20: tensor([-0.0009, -0.0007, -0.0008, -0.0008, -0.0007, -0.0008, -0.0008, -0.0009,
+        -0.0008, -0.0009, -0.0009, -0.0008, -0.0008, -0.0007, -0.0007, -0.0008,
+        -0.0008, -0.0007, -0.0008, -0.0008], device='cuda:0')
+param_corr min/max: -0.0009237269405275583 -0.0004271392244845629
+========================================
+========== SCORE CHANGE DEBUG ==========
+score_delta mean/std: -0.0014056852087378502 0.0002571504155639559
+score_delta first 20: tensor([-0.0017, -0.0015, -0.0015, -0.0016, -0.0015, -0.0016, -0.0015, -0.0017,
+        -0.0016, -0.0018, -0.0017, -0.0017, -0.0016, -0.0015, -0.0014, -0.0016,
+        -0.0017, -0.0015, -0.0015, -0.0016], device='cuda:0')
+========================================
+========== MEMORY READ DEBUG ==========
+context shape: torch.Size([238162, 15])
+memory state shape: torch.Size([16, 16])
+memory state mean/std: 1.3394519555731677e-06 3.9420159737346694e-05
+======================================
+========== MEMORY READ DEBUG ==========
+context shape: torch.Size([64, 6])
+memory state shape: torch.Size([16, 16])
+memory state mean/std: 1.6933328879531473e-05 0.009951251558959484
+======================================
+========== PARAM MEMORY DEBUG ==========
+param_cross_ctx shape: torch.Size([])
+param_cross_ctx: tensor(0.8765, device='cuda:0')
+param_ctx shape: torch.Size([64, 6])
+param_ctx mean/std: 0.6447110176086426 0.3351384699344635
+param_corr shape: torch.Size([64])
+param_corr mean/std: -0.0007630340987816453 0.00014325733354780823
+param_corr first 20: tensor([-0.0009, -0.0008, -0.0008, -0.0009, -0.0008, -0.0009, -0.0008, -0.0010,
+        -0.0009, -0.0010, -0.0009, -0.0009, -0.0008, -0.0008, -0.0008, -0.0009,
+        -0.0009, -0.0008, -0.0008, -0.0009], device='cuda:0')
+param_corr min/max: -0.0010011570993810892 -0.00047032092697918415
+========================================
+========== SCORE CHANGE DEBUG ==========
+score_delta mean/std: -0.0015260681975632906 0.00028651466709561646
+score_delta first 20: tensor([-0.0019, -0.0016, -0.0017, -0.0018, -0.0016, -0.0017, -0.0017, -0.0019,
+        -0.0018, -0.0020, -0.0019, -0.0019, -0.0016, -0.0017, -0.0015, -0.0017,
+        -0.0018, -0.0015, -0.0016, -0.0018], device='cuda:0')
+========================================
+ougp/seed0 epoch=003 loss=2.0725 val=0.2484 test=0.2544 g_keep=0.760 p_keep=0.760 param_logits_mean=1.960039 param_logits_std=0.000046 param_memory_correction_mean=-0.000763 param_memory_correction_std=0.000143 recall_correction_mean=0.005834 recall_correction_std=0.012265
+========== MEMORY READ DEBUG ==========
+context shape: torch.Size([238162, 15])
+memory state shape: torch.Size([16, 16])
+memory state mean/std: 1.3394519555731677e-06 3.9420159737346694e-05
+======================================
+========== MEMORY READ DEBUG ==========
+context shape: torch.Size([64, 6])
+memory state shape: torch.Size([16, 16])
+memory state mean/std: 1.6933328879531473e-05 0.009951251558959484
+======================================
+========== PARAM MEMORY DEBUG ==========
+param_cross_ctx shape: torch.Size([])
+param_cross_ctx: tensor(0.8765, device='cuda:0')
+param_ctx shape: torch.Size([64, 6])
+param_ctx mean/std: 0.6447110176086426 0.3351384699344635
+param_corr shape: torch.Size([64])
+param_corr mean/std: -0.0007630340987816453 0.00014325733354780823
+param_corr first 20: tensor([-0.0009, -0.0008, -0.0008, -0.0009, -0.0008, -0.0009, -0.0008, -0.0010,
+        -0.0009, -0.0010, -0.0009, -0.0009, -0.0008, -0.0008, -0.0008, -0.0009,
+        -0.0009, -0.0008, -0.0008, -0.0009], device='cuda:0')
+param_corr min/max: -0.0010011570993810892 -0.00047032092697918415
+========================================
+========== SCORE CHANGE DEBUG ==========
+score_delta mean/std: -0.0015260681975632906 0.00028651466709561646
+score_delta first 20: tensor([-0.0019, -0.0016, -0.0017, -0.0018, -0.0016, -0.0017, -0.0017, -0.0019,
+        -0.0018, -0.0020, -0.0019, -0.0019, -0.0016, -0.0017, -0.0015, -0.0017,
+        -0.0018, -0.0015, -0.0016, -0.0018], device='cuda:0')
+========================================
+========== MEMORY READ DEBUG ==========
+context shape: torch.Size([238162, 15])
+memory state shape: torch.Size([16, 16])
+memory state mean/std: 2.712746663746657e-06 9.61910918704234e-05
+======================================
+========== MEMORY READ DEBUG ==========
+context shape: torch.Size([64, 6])
+memory state shape: torch.Size([16, 16])
+memory state mean/std: 3.377877874299884e-06 0.012184489518404007
+======================================
+========== PARAM MEMORY DEBUG ==========
+param_cross_ctx shape: torch.Size([])
+param_cross_ctx: tensor(0.8754, device='cuda:0')
+param_ctx shape: torch.Size([64, 6])
+param_ctx mean/std: 0.6576659679412842 0.3370751142501831
+param_corr shape: torch.Size([64])
+param_corr mean/std: -0.0002500955597497523 5.975580643280409e-05
+param_corr first 20: tensor([-0.0003, -0.0003, -0.0003, -0.0003, -0.0003, -0.0003, -0.0003, -0.0003,
+        -0.0003, -0.0003, -0.0003, -0.0003, -0.0003, -0.0003, -0.0003, -0.0003,
+        -0.0003, -0.0003, -0.0003, -0.0003], device='cuda:0')
+param_corr min/max: -0.00033666426315903664 -0.00012548035010695457
+========================================
+========== SCORE CHANGE DEBUG ==========
+score_delta mean/std: -0.0005001911194995046 0.00011951161286560819
+score_delta first 20: tensor([-0.0007, -0.0006, -0.0006, -0.0007, -0.0006, -0.0006, -0.0006, -0.0007,
+        -0.0006, -0.0007, -0.0006, -0.0006, -0.0006, -0.0006, -0.0006, -0.0006,
+        -0.0006, -0.0006, -0.0006, -0.0006], device='cuda:0')
+========================================
+ougp/seed0 epoch=004 loss=2.0693 val=0.2484 test=0.2546 g_keep=0.700 p_keep=0.700 param_logits_mean=1.950783 param_logits_std=0.000358 param_memory_correction_mean=-0.000250 param_memory_correction_std=0.000060 recall_correction_mean=0.007777 recall_correction_std=0.016003
+Wrote 1 runs to experiments/exp018_photo_memory_debug_gpu0
+# OUGP Case Study Summary
+
+Dataset: `photo`
+
+| Variant | Best Test Acc | Graph Sparsity | Param Sparsity | Graph Churn | Param Churn |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| ougp | 0.2557 +/- 0.0000 | 0.300 | 0.300 | 0.060 | 0.060 |
+

@@ -1,0 +1,12 @@
+ougp/seed0 epoch=000 loss=3.7444 val=0.0626 test=0.0769 g_keep=1.000 p_keep=1.000
+ougp/seed0 epoch=001 loss=3.6550 val=0.1112 test=0.1664 g_keep=0.800 p_keep=0.800
+Wrote 1 runs to experiments/exp033_ogbn_arxiv_frontier_subgraph_smoke
+# OUGP Case Study Summary
+
+Dataset: `ogbn-arxiv`
+Backbone: `gcn`
+
+| Variant | Best Test Acc | Graph Sparsity | Param Sparsity | Message Cost Red. | Param Cost Red. | Graph Churn | Param Churn |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| ougp | 0.1664 +/- 0.0000 | 0.200 | 0.200 | 0.184 | 0.200 | 0.200 | 0.200 |
+

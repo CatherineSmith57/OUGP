@@ -1,0 +1,4 @@
+dataset,setting,best_test_acc_mean,best_test_acc_std,graph_sparsity,param_sparsity,graph_churn,param_churn,old_ougp_best_test_acc_mean,interpretation
+cora,scale_aligned_channel_memory,0.8083,0.0106,0.300,0.300,0.011,0.003,0.8060,"Stable; matches old OUGP level"
+citeseer,scale_aligned_channel_memory,0.7143,0.0052,0.300,0.300,0.006,0.003,0.7160,"Stable; close to old OUGP"
+pubmed,scale_aligned_channel_memory,0.7897,0.0009,0.300,0.300,0.005,0.003,0.7890,"Stable; matches old OUGP level"

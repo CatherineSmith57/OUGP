@@ -1,0 +1,12 @@
+ougp/seed0 epoch=000 loss=1.9460 val=0.3237 test=0.4017 g_keep=1.000 p_keep=1.000
+ougp/seed0 epoch=001 loss=1.9439 val=0.4155 test=0.4875 g_keep=0.800 p_keep=0.800
+Wrote 1 runs to experiments/exp032_cora_node_subgraph_smoke
+# OUGP Case Study Summary
+
+Dataset: `cora`
+Backbone: `gcn`
+
+| Variant | Best Test Acc | Graph Sparsity | Param Sparsity | Message Cost Red. | Param Cost Red. | Graph Churn | Param Churn |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| ougp | 0.4875 +/- 0.0000 | 0.200 | 0.200 | 0.122 | 0.200 | 0.200 | 0.200 |
+

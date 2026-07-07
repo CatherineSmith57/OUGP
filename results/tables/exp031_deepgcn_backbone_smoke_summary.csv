@@ -1,0 +1,3 @@
+dataset,backbone,num_gnn_layers,variant,best_test_acc,graph_sparsity,param_sparsity,message_cost_reduction,parameter_cost_reduction,graph_churn,param_churn,seeds,epochs
+cora,deepgcn,4,dense,0.3160,0.000,0.000,0.000,0.000,0.000,0.000,0,4
+cora,deepgcn,4,ougp,0.3130,0.200,0.200,0.165,0.203,0.067,0.067,0,4

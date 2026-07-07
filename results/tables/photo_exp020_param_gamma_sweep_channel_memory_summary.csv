@@ -1,0 +1,6 @@
+param_gamma,best_test_acc_mean,best_test_acc_std,graph_sparsity,param_sparsity,graph_churn,param_churn,note
+0.1,0.7495,0.0134,0.300,0.300,0.008,0.005,"Stable; close to old OUGP baseline"
+0.2,0.7480,0.0169,0.300,0.300,0.015,0.022,"Still stable; mild channel-level feedback"
+0.5,0.7153,0.0161,0.300,0.300,0.008,0.125,"Too strong; parameter mask churn becomes large"
+1.0,0.7295,0.0314,0.300,0.300,0.021,0.119,"Too strong; unstable across seeds"
+2.0,0.7281,0.0170,0.300,0.300,0.012,0.114,"Previous exp019 setting; too strong"

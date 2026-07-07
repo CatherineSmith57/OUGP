@@ -1,0 +1,1 @@
+/home/shizitong/miniconda3/envs/tianjiaying/bin/python scripts/run_case_study.py --dataset cora --data-root data/raw/planetoid --out-dir experiments/exp026_gat_small_graph_validation/cora --variants dense ougp --seeds 0 --epochs 20 --warmup-epochs 5 --hidden-dim 32 --memory-rank 8 --graph-sparsity 0.30 --param-sparsity 0.30 --backbone gat --device cpu --verbose --log-every 10
