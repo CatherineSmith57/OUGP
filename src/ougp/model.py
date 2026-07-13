@@ -13,6 +13,13 @@ def l2_normalize(x: torch.Tensor, eps: float = 1e-8) -> torch.Tensor:
     return x / x.norm(dim=-1, keepdim=True).clamp_min(eps)
 
 
+def normalize_utility_signal(utility: torch.Tensor) -> torch.Tensor:
+    utility = utility.detach().float()
+    if utility.numel() <= 1:
+        return utility / utility.abs().mean().clamp_min(1e-6)
+    return (utility - utility.mean()) / utility.std(unbiased=False).clamp_min(1e-6)
+
+
 def ste_sigmoid(logits: torch.Tensor, temperature: float, hard: bool) -> torch.Tensor:
     soft = torch.sigmoid(logits / temperature)
     if not hard:
@@ -91,11 +98,25 @@ class OUGPConfig:
     param_target_keep: float = 0.70
     graph_gamma: float = 0.35
     param_gamma: float = 0.35
+    graph_score_scale_decay: float = 0.95
+    graph_score_scale_min: float = 0.02
+    graph_score_scale_max: float = 0.50
+    graph_correction_clip: float = 2.0
     param_score_scale_decay: float = 0.95
     param_score_scale_min: float = 0.02
     param_score_scale_max: float = 0.50
     param_correction_clip: float = 2.0
     cross_gamma: float = 0.20
+    use_hidden_coupling: bool = False
+    hidden_coupling_mix_graph: float = 0.0
+    hidden_coupling_mix_param: float = 0.0
+    hidden_coupling_interval: int = 1
+    hidden_coupling_start_epoch: int = 0
+    hidden_coupling_layer_norm_weight: float = 1.0
+    hidden_coupling_interaction_weight: float = 1.0
+    hidden_coupling_relation_weight: float = 1.0
+    hidden_coupling_param_damage_weight: float = 1.0
+    hidden_coupling_graph_damage_weight: float = 1.0
     write_beta: float = 0.12
     write_lambda: float = 0.98
     event_gamma: float = 0.0
@@ -119,6 +140,12 @@ class OUGPConfig:
     backbone: str = "gcn"
     budget_target: float = 0.70
     memory_write_mode: str = "residual"
+    graph_memory_granularity: str = "edge"
+    graph_memory_layout: str = "single"
+    use_graph_full_branch: bool = True
+    use_graph_grad_branch: bool = True
+    use_graph_branch_gates: bool = True
+    param_memory_layout: str = "single"
     graph_score_init: str = "constant"
     param_score_init: str = "constant"
     freeze_pruning_scores: bool = False
@@ -197,8 +224,7 @@ class OnlinePruningMemory(nn.Module):
         _, k, v = self.project_qkv(context.detach())
         pred_vec = k @ self.state.t()
         pred = self.utility_head(pred_vec).squeeze(-1)
-        utility = utility.detach().float()
-        utility = (utility - utility.mean()) / utility.std(unbiased=False).clamp_min(1e-6)
+        utility = normalize_utility_signal(utility)
         residual = utility - pred
         if mode == "residual":
             target_v = v * residual.tanh().unsqueeze(-1)
@@ -364,8 +390,7 @@ class ChannelPruningMemory(nn.Module):
         _, k, v = self.project_qkv(context.detach())
         pred_vec = torch.einsum("ck,cok->co", k, self.state)
         pred = self.utility_head(pred_vec).squeeze(-1)
-        utility = utility.detach().float()
-        utility = (utility - utility.mean()) / utility.std(unbiased=False).clamp_min(1e-6)
+        utility = normalize_utility_signal(utility)
         residual = utility - pred
         if mode == "residual":
             target_v = v * residual.tanh().unsqueeze(-1)
@@ -501,8 +526,14 @@ class OUGPGCN(nn.Module):
         self.cfg = cfg
         if cfg.memory_write_mode not in {"residual", "feature", "none"}:
             raise ValueError("cfg.memory_write_mode must be one of: residual, feature, none.")
-        if cfg.graph_score_init not in {"constant", "random", "degree", "similarity"}:
-            raise ValueError("cfg.graph_score_init must be one of: constant, random, degree, similarity.")
+        if cfg.graph_memory_granularity not in {"edge", "subgraph"}:
+            raise ValueError("cfg.graph_memory_granularity must be one of: edge, subgraph.")
+        if cfg.graph_memory_layout not in {"single", "multi"}:
+            raise ValueError("cfg.graph_memory_layout must be one of: single, multi.")
+        if cfg.param_memory_layout not in {"single", "multi"}:
+            raise ValueError("cfg.param_memory_layout must be one of: single, multi.")
+        if cfg.graph_score_init not in {"constant", "random", "degree", "similarity", "topofeat"}:
+            raise ValueError("cfg.graph_score_init must be one of: constant, random, degree, similarity, topofeat.")
         if cfg.param_score_init not in {"constant", "random", "magnitude"}:
             raise ValueError("cfg.param_score_init must be one of: constant, random, magnitude.")
         self.register_buffer("base_edge_index", edge_index)
@@ -511,8 +542,10 @@ class OUGPGCN(nn.Module):
         self.lin2 = nn.Linear(cfg.hidden_dim, cfg.out_dim, bias=False)
         if cfg.backbone not in {"gcn", "sage", "gat", "deepgcn"}:
             raise ValueError("cfg.backbone must be one of: 'gcn', 'sage', 'gat', 'deepgcn'.")
-        if cfg.backbone != "deepgcn" and cfg.num_gnn_layers != 2:
-            raise ValueError("cfg.num_gnn_layers is currently only configurable for the 'deepgcn' backbone.")
+        if cfg.backbone in {"sage", "gat"} and cfg.num_gnn_layers != 2:
+            raise ValueError("cfg.num_gnn_layers is currently only configurable for the 'gcn' and 'deepgcn' backbones.")
+        if cfg.backbone == "gcn" and cfg.num_gnn_layers < 2:
+            raise ValueError("gcn requires cfg.num_gnn_layers >= 2.")
         if cfg.backbone == "deepgcn" and cfg.num_gnn_layers < 3:
             raise ValueError("deepgcn requires cfg.num_gnn_layers >= 3.")
         self.deep_hidden_lins = nn.ModuleList(
@@ -542,6 +575,8 @@ class OUGPGCN(nn.Module):
         param_init = self.initial_param_scores(cfg.param_score_init)
         self.edge_logits = nn.Parameter(edge_init, requires_grad=not cfg.freeze_pruning_scores)
         self.param_logits = nn.Parameter(param_init, requires_grad=not cfg.freeze_pruning_scores)
+        self.graph_branch_logits = nn.Parameter(torch.zeros(4), requires_grad=cfg.use_graph_branch_gates)
+        self.register_buffer("graph_logit_scale_ema", torch.tensor(float(cfg.graph_score_scale_min)))
         self.register_buffer("param_logit_scale_ema", torch.tensor(float(cfg.param_score_scale_min)))
 
         generator = torch.Generator()
@@ -561,6 +596,32 @@ class OUGPGCN(nn.Module):
             recall_beta=cfg.recall_beta,
             recall_decay=cfg.recall_decay,
         )
+        if cfg.graph_memory_layout == "multi":
+            self.graph_memory_topo = OnlinePruningMemory(
+                cfg.edge_context_dim,
+                cfg.memory_rank,
+                cfg.write_beta,
+                cfg.write_lambda,
+            )
+            self.graph_memory_feat = OnlinePruningMemory(
+                cfg.edge_context_dim,
+                cfg.memory_rank,
+                cfg.write_beta,
+                cfg.write_lambda,
+            )
+            if cfg.use_graph_grad_branch:
+                self.graph_memory_grad = OnlinePruningMemory(
+                    cfg.edge_context_dim,
+                    cfg.memory_rank,
+                    cfg.write_beta,
+                    cfg.write_lambda,
+                )
+            else:
+                self.graph_memory_grad = None
+        else:
+            self.graph_memory_topo = None
+            self.graph_memory_feat = None
+            self.graph_memory_grad = None
         self.param_memory = ChannelPruningMemory(
             cfg.param_context_dim,
             cfg.memory_rank,
@@ -570,6 +631,15 @@ class OUGPGCN(nn.Module):
             recall_beta=cfg.recall_beta,
             recall_decay=cfg.recall_decay,
         )
+        if cfg.param_memory_layout == "multi":
+            self.param_memory_layer = OnlinePruningMemory(
+                cfg.param_context_dim,
+                cfg.memory_rank,
+                cfg.write_beta,
+                cfg.write_lambda,
+            )
+        else:
+            self.param_memory_layer = None
         self.steering_memory = MemorySteeringMLP(
             cfg.steer_context_dim,
             cfg.memory_rank,
@@ -615,6 +685,13 @@ class OUGPGCN(nn.Module):
             row, col = self.base_edge_index
             x_norm = l2_normalize(self.x_ref.detach().float())
             scores = (x_norm[row] * x_norm[col]).sum(dim=-1)
+        elif mode == "topofeat":
+            row, col = self.base_edge_index
+            degree = torch.bincount(row, minlength=self.cfg.num_nodes).float().to(self.base_edge_index.device)
+            degree_scores = self.normalized_init_scores(degree[row] + degree[col])
+            x_norm = l2_normalize(self.x_ref.detach().float())
+            similarity_scores = self.normalized_init_scores((x_norm[row] * x_norm[col]).sum(dim=-1))
+            scores = 0.5 * degree_scores + 0.5 * similarity_scores
         else:
             raise ValueError(f"Unknown graph score init mode {mode!r}.")
         return self.normalized_init_scores(scores)
@@ -639,8 +716,17 @@ class OUGPGCN(nn.Module):
 
     def reset_memory(self) -> None:
         self.graph_memory.reset_state()
+        if self.graph_memory_topo is not None:
+            self.graph_memory_topo.reset_state()
+        if self.graph_memory_feat is not None:
+            self.graph_memory_feat.reset_state()
+        if self.graph_memory_grad is not None:
+            self.graph_memory_grad.reset_state()
         self.param_memory.reset_state()
+        if self.param_memory_layer is not None:
+            self.param_memory_layer.reset_state()
         self.steering_memory.reset_state()
+        self.graph_logit_scale_ema.fill_(float(self.cfg.graph_score_scale_min))
         self.param_logit_scale_ema.fill_(float(self.cfg.param_score_scale_min))
 
     def dense_edge_count(self) -> torch.Tensor:
@@ -711,7 +797,13 @@ class OUGPGCN(nn.Module):
 
     def memory_state_items(self) -> torch.Tensor:
         graph_items = float(self.cfg.memory_rank * self.cfg.memory_rank)
+        if self.cfg.graph_memory_layout == "multi":
+            graph_items = float(2 + int(self.cfg.use_graph_full_branch) + int(self.cfg.use_graph_grad_branch)) * float(
+                self.cfg.memory_rank * self.cfg.memory_rank
+            )
         param_items = float(self.cfg.hidden_dim * self.cfg.memory_rank * self.cfg.memory_rank)
+        if self.cfg.param_memory_layout == "multi":
+            param_items += float(self.cfg.memory_rank * self.cfg.memory_rank)
         recall_items = float(self.cfg.num_edges + self.cfg.hidden_dim)
         steering_items = float(self.cfg.memory_rank * self.cfg.memory_rank)
         return self.edge_logits.new_tensor(graph_items + param_items + recall_items + steering_items)
@@ -750,6 +842,30 @@ class OUGPGCN(nn.Module):
         param_ctx = param_keep.expand(row.numel(), 1)
         return torch.cat([x_proj[row], x_proj[col], degree[row], degree[col], param_ctx], dim=-1)
 
+    def graph_branch_contexts(self, graph_ctx: torch.Tensor, graph_signal: torch.Tensor | None = None) -> dict[str, torch.Tensor]:
+        if graph_ctx.size(-1) != self.cfg.edge_context_dim:
+            raise ValueError("graph_ctx last dimension must match cfg.edge_context_dim.")
+        feat_dim = self.cfg.feature_context_dim
+        src_feat = graph_ctx[:, :feat_dim]
+        dst_feat = graph_ctx[:, feat_dim : 2 * feat_dim]
+        src_deg = graph_ctx[:, 2 * feat_dim : 2 * feat_dim + 1]
+        dst_deg = graph_ctx[:, 2 * feat_dim + 1 : 2 * feat_dim + 2]
+        param_ctx = graph_ctx[:, -1:]
+        if graph_signal is None:
+            graph_signal = self.edge_logits.detach().float()
+        zeros_feat = torch.zeros_like(src_feat)
+        zeros_deg = torch.zeros_like(src_deg)
+        branches = {
+            "full": graph_ctx,
+            "topo": torch.cat([zeros_feat, zeros_feat, src_deg, dst_deg, param_ctx], dim=-1),
+            "feat": torch.cat([src_feat, dst_feat, zeros_deg, zeros_deg, param_ctx], dim=-1),
+        }
+        if self.cfg.use_graph_grad_branch:
+            grad_signal = graph_signal.detach().float().to(graph_ctx.device, graph_ctx.dtype).unsqueeze(-1)
+            grad_signal = torch.tanh(grad_signal)
+            branches["grad"] = torch.cat([zeros_feat, zeros_feat, src_deg, dst_deg, grad_signal], dim=-1)
+        return branches
+
     def param_context(self, graph_keep: torch.Tensor) -> torch.Tensor:
         w1_norm = self.lin1.weight.t().norm(dim=0, keepdim=True).t()
         w2_norm = self.lin2.weight.norm(dim=0, keepdim=True).t()
@@ -786,6 +902,22 @@ class OUGPGCN(nn.Module):
         normalized = centered / std.to(signal.dtype)
         return normalized.clamp(-self.cfg.param_correction_clip, self.cfg.param_correction_clip)
 
+    def normalized_graph_signal(self, signal: torch.Tensor) -> torch.Tensor:
+        centered = signal - signal.detach().float().mean().to(signal.dtype)
+        std = centered.detach().float().std(unbiased=False)
+        if float(std.item()) <= 1e-6:
+            return torch.zeros_like(signal)
+        normalized = centered / std.to(signal.dtype)
+        return normalized.clamp(-self.cfg.graph_correction_clip, self.cfg.graph_correction_clip)
+
+    def graph_score_scale(self) -> torch.Tensor:
+        current = self.edge_logits.detach().float().std(unbiased=False)
+        current = current.clamp(self.cfg.graph_score_scale_min, self.cfg.graph_score_scale_max)
+        if self.training:
+            decay = float(self.cfg.graph_score_scale_decay)
+            self.graph_logit_scale_ema.mul_(decay).add_((1.0 - decay) * current.to(self.graph_logit_scale_ema.device))
+        return self.graph_logit_scale_ema.to(device=self.edge_logits.device, dtype=self.edge_logits.dtype)
+
     def param_score_scale(self) -> torch.Tensor:
         current = self.param_logits.detach().float().std(unbiased=False)
         current = current.clamp(self.cfg.param_score_scale_min, self.cfg.param_score_scale_max)
@@ -797,6 +929,7 @@ class OUGPGCN(nn.Module):
     def masks(self, temperature: float) -> tuple[torch.Tensor, torch.Tensor, dict[str, float]]:
         base_graph_keep = torch.sigmoid(self.edge_logits).mean().detach()
         base_param_keep = torch.sigmoid(self.param_logits).mean().detach()
+        graph_scale = self.graph_score_scale()
         param_scale = self.param_score_scale()
 
         if self.cfg.use_memory:
@@ -804,18 +937,30 @@ class OUGPGCN(nn.Module):
             param_cross_ctx = base_graph_keep if self.cfg.use_cross else self.edge_logits.new_tensor(self.cfg.graph_target_keep)
             graph_ctx = self.edge_context(graph_cross_ctx)
             param_ctx = self.param_context(param_cross_ctx)
-            graph_corr, _, _, _ = self.graph_memory.read(graph_ctx)
-            raw_param_corr, _, _, _ = self.param_memory.read(param_ctx)
+            raw_graph_corr, graph_branch_stats = self.graph_correction(graph_ctx)
+            unit_graph_corr = self.normalized_graph_signal(raw_graph_corr)
+            graph_corr = graph_scale * unit_graph_corr
+            raw_param_corr, param_branch_stats = self.param_correction(param_ctx)
             unit_param_corr = self.normalized_param_signal(raw_param_corr)
             param_corr = param_scale * unit_param_corr
         else:
+            raw_graph_corr = torch.zeros_like(self.edge_logits)
             graph_corr = torch.zeros_like(self.edge_logits)
+            graph_branch_stats = {}
+            unit_graph_corr = torch.zeros_like(self.edge_logits)
             raw_param_corr = torch.zeros_like(self.param_logits)
+            param_branch_stats = {}
             unit_param_corr = torch.zeros_like(self.param_logits)
             param_corr = torch.zeros_like(self.param_logits)
 
         graph_score = self.edge_logits
         param_score = self.param_logits
+        raw_graph_event_corr = self.graph_memory.event_correction(graph_score)
+        unit_graph_event_corr = self.normalized_graph_signal(raw_graph_event_corr)
+        graph_event_corr = graph_scale * unit_graph_event_corr
+        raw_graph_recall_corr = self.graph_memory.recall_correction(graph_score)
+        unit_graph_recall_corr = self.normalized_graph_signal(raw_graph_recall_corr)
+        graph_recall_corr = graph_scale * unit_graph_recall_corr
         raw_param_recall_corr = self.param_memory.recall_correction(param_score)
         unit_param_recall_corr = self.normalized_param_signal(raw_param_recall_corr)
         param_recall_corr = param_scale * unit_param_recall_corr
@@ -824,9 +969,9 @@ class OUGPGCN(nn.Module):
             graph_score = graph_score + self.cfg.graph_gamma * graph_corr
             param_score = param_score + self.cfg.param_gamma * param_corr
             if self.cfg.use_graph_pruning and self.cfg.event_gamma != 0.0:
-                graph_score = graph_score + self.cfg.event_gamma * self.graph_memory.event_correction(graph_score)
+                graph_score = graph_score + self.cfg.event_gamma * graph_event_corr
             if self.cfg.use_graph_pruning and self.cfg.recall_gamma != 0.0:
-                graph_score = graph_score + self.cfg.recall_gamma * self.graph_memory.recall_correction(graph_score)
+                graph_score = graph_score + self.cfg.recall_gamma * graph_recall_corr
             if self.cfg.use_param_pruning and self.cfg.recall_gamma != 0.0:
                 param_score = param_score + self.cfg.recall_gamma * param_recall_corr
         graph_keep_target = self.cfg.graph_target_keep
@@ -858,6 +1003,22 @@ class OUGPGCN(nn.Module):
         stats = {
             "graph_keep": float(graph_mask.detach().mean().item()),
             "param_keep": float(param_mask.detach().mean().item()),
+            "graph_logits_mean": float(self.edge_logits.detach().float().mean().item()),
+            "graph_logits_std": float(self.edge_logits.detach().float().std(unbiased=False).item()),
+            "graph_memory_correction_mean": float(graph_corr.detach().float().mean().item()),
+            "graph_memory_correction_std": float(graph_corr.detach().float().std(unbiased=False).item()),
+            "graph_memory_unit_correction_mean": float(unit_graph_corr.detach().float().mean().item()),
+            "graph_memory_unit_correction_std": float(unit_graph_corr.detach().float().std(unbiased=False).item()),
+            "graph_memory_raw_correction_mean": float(raw_graph_corr.detach().float().mean().item()),
+            "graph_memory_raw_correction_std": float(raw_graph_corr.detach().float().std(unbiased=False).item()),
+            "graph_event_correction_mean": float(graph_event_corr.detach().float().mean().item()),
+            "graph_event_correction_std": float(graph_event_corr.detach().float().std(unbiased=False).item()),
+            "graph_recall_correction_mean": float(graph_recall_corr.detach().float().mean().item()),
+            "graph_recall_correction_std": float(graph_recall_corr.detach().float().std(unbiased=False).item()),
+            "graph_score_scale": float(graph_scale.detach().float().item()),
+            "graph_memory_score_delta_std": float((self.cfg.graph_gamma * graph_corr).detach().float().std(unbiased=False).item()),
+            "graph_event_score_delta_std": float((self.cfg.event_gamma * graph_event_corr).detach().float().std(unbiased=False).item()),
+            "graph_recall_score_delta_std": float((self.cfg.recall_gamma * graph_recall_corr).detach().float().std(unbiased=False).item()),
             "param_logits_mean": float(self.param_logits.detach().float().mean().item()),
             "param_logits_std": float(self.param_logits.detach().float().std(unbiased=False).item()),
             "param_memory_correction_mean": float(param_corr.detach().float().mean().item()),
@@ -874,6 +1035,8 @@ class OUGPGCN(nn.Module):
             "param_memory_score_delta_std": float((self.cfg.param_gamma * param_corr).detach().float().std(unbiased=False).item()),
             "recall_score_delta_std": float((self.cfg.recall_gamma * param_recall_corr).detach().float().std(unbiased=False).item()),
         }
+        stats.update(graph_branch_stats)
+        stats.update(param_branch_stats)
         return graph_mask, param_mask, stats
 
     def steering_context(
@@ -902,8 +1065,35 @@ class OUGPGCN(nn.Module):
             raise ValueError("steering_context size must match cfg.steer_context_dim.")
         return context
 
-    def forward(self, x: torch.Tensor, temperature: float = 1.0) -> tuple[torch.Tensor, dict[str, float]]:
-        graph_mask, param_mask, stats = self.masks(temperature)
+    def _record_hidden(
+        self,
+        hidden_states: list[dict[str, torch.Tensor | str | int]],
+        layer: int,
+        kind: str,
+        value: torch.Tensor,
+        retain_hidden_grad: bool,
+    ) -> None:
+        if retain_hidden_grad and value.requires_grad:
+            value.retain_grad()
+        hidden_states.append({"layer": layer, "kind": kind, "tensor": value})
+
+    def forward(
+        self,
+        x: torch.Tensor,
+        temperature: float = 1.0,
+        return_hidden_states: bool = False,
+        fixed_masks: tuple[torch.Tensor, torch.Tensor] | None = None,
+        retain_hidden_grad: bool = False,
+    ) -> tuple[torch.Tensor, dict[str, float]] | tuple[torch.Tensor, dict[str, float], list[dict[str, torch.Tensor | str | int]]]:
+        hidden_states: list[dict[str, torch.Tensor | str | int]] = []
+        if fixed_masks is None:
+            graph_mask, param_mask, stats = self.masks(temperature)
+        else:
+            graph_mask, param_mask = fixed_masks
+            stats = {
+                "graph_keep": float(graph_mask.detach().float().mean().item()),
+                "param_keep": float(param_mask.detach().float().mean().item()),
+            }
         num_nodes = x.size(0)
         if self.cfg.backbone in {"gcn", "deepgcn"}:
             self_loops = torch.arange(num_nodes, device=x.device)
@@ -913,6 +1103,8 @@ class OUGPGCN(nn.Module):
             norm_weight = symmetric_norm(edge_index, edge_weight, num_nodes)
             h = sparse_gcn_mm(edge_index, norm_weight, x, num_nodes)
             h = self.lin1(h)
+            if return_hidden_states:
+                self._record_hidden(hidden_states, 0, "pre_activation", h, retain_hidden_grad)
         elif self.cfg.backbone == "sage":
             edge_index = self.base_edge_index
             edge_weight = graph_mask
@@ -920,6 +1112,8 @@ class OUGPGCN(nn.Module):
                 raise RuntimeError("GraphSAGE layers were not initialized.")
             neigh = sparse_mean_mm(edge_index, edge_weight, x, num_nodes)
             h = self.lin1(x) + self.sage_lin1_neigh(neigh)
+            if return_hidden_states:
+                self._record_hidden(hidden_states, 0, "pre_activation", h, retain_hidden_grad)
         elif self.cfg.backbone == "gat":
             self_loops = torch.arange(num_nodes, device=x.device)
             self_loop_index = torch.stack([self_loops, self_loops], dim=0)
@@ -929,6 +1123,8 @@ class OUGPGCN(nn.Module):
                 raise RuntimeError("GAT attention parameters were not initialized.")
             h_linear = self.lin1(x)
             h = sparse_gat_mm(edge_index, edge_weight, h_linear, self.gat_attn1_src, self.gat_attn1_dst, num_nodes)
+            if return_hidden_states:
+                self._record_hidden(hidden_states, 0, "pre_activation", h, retain_hidden_grad)
         else:
             raise ValueError(f"Unknown backbone {self.cfg.backbone!r}.")
 
@@ -944,15 +1140,31 @@ class OUGPGCN(nn.Module):
                 self.last_steered_hidden = h
             stats.update({f"steering_{key}": value for key, value in steering_stats.items()})
         h = F.relu(h) * param_mask
+        if return_hidden_states:
+            self._record_hidden(hidden_states, 0, "activation", h, retain_hidden_grad)
         h = F.dropout(h, p=0.5, training=self.training)
         if self.cfg.backbone == "gcn":
+            for layer_idx, layer in enumerate(self.deep_hidden_lins, start=1):
+                h = sparse_gcn_mm(edge_index, norm_weight, h, num_nodes)
+                h = layer(h)
+                if return_hidden_states:
+                    self._record_hidden(hidden_states, layer_idx, "pre_activation", h, retain_hidden_grad)
+                h = F.relu(h) * param_mask
+                if return_hidden_states:
+                    self._record_hidden(hidden_states, layer_idx, "activation", h, retain_hidden_grad)
+                h = F.dropout(h, p=0.5, training=self.training)
             h = sparse_gcn_mm(edge_index, norm_weight, h, num_nodes)
             out = self.lin2(h)
         elif self.cfg.backbone == "deepgcn":
             for layer in self.deep_hidden_lins:
                 h_next = sparse_gcn_mm(edge_index, norm_weight, h, num_nodes)
                 h_next = layer(h_next)
+                if return_hidden_states:
+                    layer_idx = len([item for item in hidden_states if item["kind"] == "pre_activation"])
+                    self._record_hidden(hidden_states, layer_idx, "pre_activation", h_next, retain_hidden_grad)
                 h = F.relu(h + h_next) * param_mask
+                if return_hidden_states:
+                    self._record_hidden(hidden_states, layer_idx, "activation", h, retain_hidden_grad)
                 h = F.dropout(h, p=0.5, training=self.training)
             h = sparse_gcn_mm(edge_index, norm_weight, h, num_nodes)
             out = self.lin2(h)
@@ -964,6 +1176,9 @@ class OUGPGCN(nn.Module):
                 raise RuntimeError("GAT attention parameters were not initialized.")
             out_linear = self.lin2(h)
             out = sparse_gat_mm(edge_index, edge_weight, out_linear, self.gat_attn2_src, self.gat_attn2_dst, num_nodes)
+        if return_hidden_states:
+            self._record_hidden(hidden_states, self.cfg.num_gnn_layers - 1, "logits", out, retain_hidden_grad)
+            return out, stats, hidden_states
         return out, stats
 
     def regularization(self) -> torch.Tensor:
@@ -1201,7 +1416,164 @@ class OUGPGCN(nn.Module):
         return rows
 
     @torch.no_grad()
-    def write_memories(self) -> dict[str, float]:
+    def hidden_coupling_utilities(
+        self,
+        x: torch.Tensor,
+        temperature: float,
+    ) -> tuple[torch.Tensor, torch.Tensor, dict[str, float]]:
+        if self.last_graph_mask is None or self.last_param_mask is None:
+            return torch.zeros_like(self.edge_logits), torch.zeros_like(self.param_logits), {
+                "hidden_coupling_available": 0.0
+            }
+
+        was_training = self.training
+        saved_last = (
+            self.last_graph_score,
+            self.last_param_score,
+            self.last_graph_mask,
+            self.last_param_mask,
+            self.last_steering_context,
+            self.last_steered_hidden,
+        )
+        self.eval()
+        graph_mask = self.last_graph_mask.detach()
+        param_mask = self.last_param_mask.detach()
+        dense_graph = torch.ones_like(graph_mask)
+        dense_param = torch.ones_like(param_mask)
+        modes = {
+            "dense": (dense_graph, dense_param),
+            "graph": (graph_mask, dense_param),
+            "param": (dense_graph, param_mask),
+            "full": (graph_mask, param_mask),
+        }
+        hidden_by_mode: dict[str, dict[int, torch.Tensor]] = {}
+        try:
+            for name, fixed_masks in modes.items():
+                _, _, hidden_states = self.forward(
+                    x,
+                    temperature=temperature,
+                    return_hidden_states=True,
+                    fixed_masks=fixed_masks,
+                    retain_hidden_grad=False,
+                )
+                hidden_by_mode[name] = {
+                    int(item["layer"]): item["tensor"].detach().float()
+                    for item in hidden_states
+                    if item["kind"] == "activation"
+                }
+        finally:
+            (
+                self.last_graph_score,
+                self.last_param_score,
+                self.last_graph_mask,
+                self.last_param_mask,
+                self.last_steering_context,
+                self.last_steered_hidden,
+            ) = saved_last
+            self.train(was_training)
+
+        common_layers = sorted(
+            set(hidden_by_mode["dense"])
+            & set(hidden_by_mode["graph"])
+            & set(hidden_by_mode["param"])
+            & set(hidden_by_mode["full"])
+        )
+        if not common_layers:
+            return torch.zeros_like(self.edge_logits), torch.zeros_like(self.param_logits), {
+                "hidden_coupling_available": 0.0
+            }
+
+        eps = 1e-8
+        row, col = self.base_edge_index
+        layer_importance: list[torch.Tensor] = []
+        param_layer_scores: list[torch.Tensor] = []
+        graph_layer_scores: list[torch.Tensor] = []
+        cosines: list[float] = []
+        interaction_ratios: list[float] = []
+        dg_norms: list[float] = []
+        dp_norms: list[float] = []
+        for layer in common_layers:
+            dense_h = hidden_by_mode["dense"][layer]
+            graph_h = hidden_by_mode["graph"][layer]
+            param_h = hidden_by_mode["param"][layer]
+            full_h = hidden_by_mode["full"][layer]
+            delta_g = graph_h - dense_h
+            delta_p = param_h - dense_h
+            residual = full_h - graph_h - param_h + dense_h
+            dg_flat = delta_g.flatten()
+            dp_flat = delta_p.flatten()
+            dg_norm = dg_flat.norm()
+            dp_norm = dp_flat.norm()
+            cosine = torch.dot(dg_flat, dp_flat) / (dg_norm * dp_norm).clamp_min(eps)
+            residual_norm = residual.flatten().norm()
+            interaction_ratio = residual_norm / (dg_norm + dp_norm).clamp_min(eps)
+
+            channel_damage = delta_p.abs().mean(dim=0)
+            channel_relation = (delta_g * delta_p).abs().mean(dim=0)
+            channel_interaction = residual.abs().mean(dim=0)
+            param_score = (
+                self.cfg.hidden_coupling_param_damage_weight * channel_damage
+                + self.cfg.hidden_coupling_relation_weight * channel_relation
+                + self.cfg.hidden_coupling_interaction_weight * channel_interaction
+            )
+
+            node_damage = delta_g.norm(dim=1)
+            node_relation = (delta_g * delta_p).norm(dim=1)
+            node_interaction = residual.norm(dim=1)
+            node_score = (
+                self.cfg.hidden_coupling_graph_damage_weight * node_damage
+                + self.cfg.hidden_coupling_relation_weight * node_relation
+                + self.cfg.hidden_coupling_interaction_weight * node_interaction
+            )
+            graph_score = 0.5 * (node_score[row] + node_score[col])
+
+            layer_importance.append(
+                self.cfg.hidden_coupling_layer_norm_weight * dp_norm
+                + self.cfg.hidden_coupling_interaction_weight * interaction_ratio
+                + self.cfg.hidden_coupling_relation_weight * cosine.abs()
+            )
+            param_layer_scores.append(normalize_utility_signal(param_score).to(device=self.param_logits.device, dtype=self.param_logits.dtype))
+            graph_layer_scores.append(normalize_utility_signal(graph_score).to(device=self.edge_logits.device, dtype=self.edge_logits.dtype))
+            cosines.append(float(cosine.item()))
+            interaction_ratios.append(float(interaction_ratio.item()))
+            dg_norms.append(float(dg_norm.item()))
+            dp_norms.append(float(dp_norm.item()))
+
+        importance = torch.stack(layer_importance).to(device=self.edge_logits.device, dtype=self.edge_logits.dtype)
+        if importance.numel() > 1:
+            importance = (importance - importance.mean()) / importance.std(unbiased=False).clamp_min(eps)
+        weights = torch.softmax(importance, dim=0)
+        graph_utility = torch.zeros_like(self.edge_logits)
+        param_utility = torch.zeros_like(self.param_logits)
+        for weight, graph_score, param_score in zip(weights, graph_layer_scores, param_layer_scores):
+            graph_utility = graph_utility + weight * graph_score
+            param_utility = param_utility + weight * param_score
+
+        stats: dict[str, float] = {
+            "hidden_coupling_available": 1.0,
+            "hidden_coupling_layer_count": float(len(common_layers)),
+            "hidden_coupling_cosine_mean": float(sum(cosines) / max(1, len(cosines))),
+            "hidden_coupling_interaction_ratio_mean": float(sum(interaction_ratios) / max(1, len(interaction_ratios))),
+            "hidden_coupling_delta_g_norm_mean": float(sum(dg_norms) / max(1, len(dg_norms))),
+            "hidden_coupling_delta_p_norm_mean": float(sum(dp_norms) / max(1, len(dp_norms))),
+            "hidden_graph_utility_mean": float(graph_utility.detach().float().mean().item()),
+            "hidden_graph_utility_std": float(graph_utility.detach().float().std(unbiased=False).item()),
+            "hidden_param_utility_mean": float(param_utility.detach().float().mean().item()),
+            "hidden_param_utility_std": float(param_utility.detach().float().std(unbiased=False).item()),
+        }
+        for layer, weight, cosine, interaction_ratio in zip(common_layers, weights.detach().float().tolist(), cosines, interaction_ratios):
+            stats[f"hidden_coupling_layer_{layer}_weight"] = float(weight)
+            stats[f"hidden_coupling_layer_{layer}_cosine"] = float(cosine)
+            stats[f"hidden_coupling_layer_{layer}_interaction_ratio"] = float(interaction_ratio)
+        return graph_utility, param_utility, stats
+
+    @torch.no_grad()
+    def write_memories(
+        self,
+        x: torch.Tensor | None = None,
+        temperature: float = 1.0,
+        epoch: int | None = None,
+    ) -> dict[str, float]:
         stats: dict[str, float] = {}
         graph_utility = None
         param_utility = None
@@ -1217,6 +1589,33 @@ class OUGPGCN(nn.Module):
             stats["memory_write_skipped"] = 1.0
             stats["memory_write_mode"] = 0.0
             return stats
+        if (
+            self.cfg.use_hidden_coupling
+            and x is not None
+            and (epoch is None or epoch >= self.cfg.hidden_coupling_start_epoch)
+            and self.cfg.hidden_coupling_interval > 0
+            and (epoch is None or (epoch - self.cfg.hidden_coupling_start_epoch) % self.cfg.hidden_coupling_interval == 0)
+        ):
+            hidden_graph_utility, hidden_param_utility, hidden_stats = self.hidden_coupling_utilities(x, temperature)
+            stats.update(hidden_stats)
+            if graph_utility is not None and self.cfg.hidden_coupling_mix_graph > 0.0:
+                mix = float(self.cfg.hidden_coupling_mix_graph)
+                graph_utility = (1.0 - mix) * normalize_utility_signal(graph_utility).to(
+                    device=graph_utility.device, dtype=graph_utility.dtype
+                ) + mix * hidden_graph_utility.to(device=graph_utility.device, dtype=graph_utility.dtype)
+                self.last_graph_utility = graph_utility
+                stats["hidden_coupling_graph_mix"] = mix
+                stats["graph_memory_mixed_utility_std"] = float(graph_utility.detach().float().std(unbiased=False).item())
+            if param_utility is not None and self.cfg.hidden_coupling_mix_param > 0.0:
+                mix = float(self.cfg.hidden_coupling_mix_param)
+                param_utility = (1.0 - mix) * normalize_utility_signal(param_utility).to(
+                    device=param_utility.device, dtype=param_utility.dtype
+                ) + mix * hidden_param_utility.to(device=param_utility.device, dtype=param_utility.dtype)
+                self.last_param_utility = param_utility
+                stats["hidden_coupling_param_mix"] = mix
+                stats["param_memory_mixed_utility_std"] = float(param_utility.detach().float().std(unbiased=False).item())
+        elif self.cfg.use_hidden_coupling:
+            stats["hidden_coupling_available"] = 0.0
         if graph_utility is not None:
             graph_cross_ctx = (
                 self.last_param_mask.detach().mean()
@@ -1224,8 +1623,8 @@ class OUGPGCN(nn.Module):
                 else self.edge_logits.new_tensor(self.cfg.param_target_keep)
             )
             graph_ctx = self.edge_context(graph_cross_ctx)
-            graph_stats = self.graph_memory.write(graph_ctx, graph_utility, mode=self.cfg.memory_write_mode)
-            stats.update({f"graph_memory_{key}": value for key, value in graph_stats.items()})
+            graph_write_stats = self.write_graph_memories(graph_ctx, graph_utility)
+            stats.update(graph_write_stats)
             stats.update(self.write_graph_event_memory(graph_utility))
             stats.update(self.write_graph_recall_memory(graph_utility))
         if param_utility is not None:
@@ -1235,8 +1634,127 @@ class OUGPGCN(nn.Module):
                 else self.edge_logits.new_tensor(self.cfg.graph_target_keep)
             )
             param_ctx = self.param_context(param_cross_ctx)
-            param_stats = self.param_memory.write(param_ctx, param_utility, mode=self.cfg.memory_write_mode)
-            stats.update({f"param_memory_{key}": value for key, value in param_stats.items()})
+            param_stats = self.write_param_memories(param_ctx, param_utility)
+            stats.update(param_stats)
             stats.update(self.write_param_recall_memory(param_utility))
         stats.update(self.write_steering_memory())
+        return stats
+
+    @torch.no_grad()
+    def graph_memory_write_inputs(
+        self,
+        graph_ctx: torch.Tensor,
+        graph_utility: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, int]:
+        if self.cfg.graph_memory_granularity == "edge":
+            return graph_ctx, graph_utility, int(graph_ctx.size(0))
+        subgraph_ctx = graph_ctx.detach().float().mean(dim=0, keepdim=True).to(device=graph_ctx.device, dtype=graph_ctx.dtype)
+        subgraph_utility = graph_utility.detach().float().mean().reshape(1).to(device=graph_utility.device, dtype=graph_utility.dtype)
+        return subgraph_ctx, subgraph_utility, 1
+
+    def graph_correction(self, graph_ctx: torch.Tensor) -> tuple[torch.Tensor, dict[str, float]]:
+        if self.cfg.graph_memory_layout == "single" or self.graph_memory_topo is None or self.graph_memory_feat is None:
+            full_corr, _, _, _ = self.graph_memory.read(graph_ctx)
+            return full_corr, {
+                "graph_memory_branch_count": 1.0,
+                "graph_memory_full_correction_std": float(full_corr.detach().float().std(unbiased=False).item()),
+                "graph_branch_gate_full": 1.0,
+            }
+        branches = self.graph_branch_contexts(graph_ctx)
+        branch_names: list[str] = []
+        topo_corr, _, _, _ = self.graph_memory_topo.read(branches["topo"])
+        feat_corr, _, _, _ = self.graph_memory_feat.read(branches["feat"])
+        branch_corrs = [topo_corr, feat_corr]
+        branch_names.extend(["topo", "feat"])
+        stats = {
+            "graph_memory_topo_correction_std": float(topo_corr.detach().float().std(unbiased=False).item()),
+            "graph_memory_feat_correction_std": float(feat_corr.detach().float().std(unbiased=False).item()),
+        }
+        if self.cfg.use_graph_full_branch:
+            full_corr, _, _, _ = self.graph_memory.read(branches["full"])
+            branch_corrs.insert(0, full_corr)
+            branch_names.insert(0, "full")
+            stats["graph_memory_full_correction_std"] = float(full_corr.detach().float().std(unbiased=False).item())
+        if self.cfg.use_graph_grad_branch and self.graph_memory_grad is not None and "grad" in branches:
+            grad_corr, _, _, _ = self.graph_memory_grad.read(branches["grad"])
+            branch_corrs.append(grad_corr)
+            branch_names.append("grad")
+            stats["graph_memory_grad_correction_std"] = float(grad_corr.detach().float().std(unbiased=False).item())
+        stacked = torch.stack(branch_corrs, dim=0)
+        if self.cfg.use_graph_branch_gates:
+            branch_index = {"full": 0, "topo": 1, "feat": 2, "grad": 3}
+            active_logits = torch.stack([self.graph_branch_logits[branch_index[name]] for name in branch_names])
+            branch_weights = torch.softmax(active_logits, dim=0).to(dtype=stacked.dtype, device=stacked.device)
+            combined = (branch_weights.view(-1, *([1] * (stacked.dim() - 1))) * stacked).sum(dim=0)
+        else:
+            branch_weights = stacked.new_full((len(branch_corrs),), 1.0 / float(len(branch_corrs)))
+            combined = stacked.mean(dim=0)
+        stats["graph_memory_branch_count"] = float(len(branch_corrs))
+        stats["graph_memory_combined_correction_std"] = float(combined.detach().float().std(unbiased=False).item())
+        for name, weight in zip(branch_names, branch_weights.detach().float().tolist()):
+            stats[f"graph_branch_gate_{name}"] = float(weight)
+        return combined, stats
+
+    @torch.no_grad()
+    def write_graph_memories(self, graph_ctx: torch.Tensor, graph_utility: torch.Tensor) -> dict[str, float]:
+        stats: dict[str, float] = {}
+        graph_write_items_total = 0.0
+        if self.cfg.graph_memory_layout == "single" or self.cfg.use_graph_full_branch:
+            graph_write_ctx, graph_write_utility, graph_write_items = self.graph_memory_write_inputs(graph_ctx, graph_utility)
+            graph_stats = self.graph_memory.write(graph_write_ctx, graph_write_utility, mode=self.cfg.memory_write_mode)
+            stats.update({f"graph_memory_{key}": value for key, value in graph_stats.items()})
+            graph_write_items_total += float(graph_write_items)
+        else:
+            stats["graph_memory_state_norm"] = float(self.graph_memory.state.norm().item())
+            stats["graph_memory_write_mode"] = 0.0
+            stats["graph_memory_utility_mean"] = 0.0
+            stats["graph_memory_residual_mean"] = 0.0
+        stats["graph_memory_write_items"] = graph_write_items_total
+        stats["graph_memory_write_granularity"] = 1.0 if self.cfg.graph_memory_granularity == "edge" else 2.0
+        stats["graph_memory_branch_count"] = 1.0 if self.cfg.graph_memory_layout == "single" else 2.0 + float(self.cfg.use_graph_full_branch) + float(self.cfg.use_graph_grad_branch)
+        if self.cfg.graph_memory_layout == "multi" and self.graph_memory_topo is not None and self.graph_memory_feat is not None:
+            branches = self.graph_branch_contexts(graph_ctx, graph_utility)
+            topo_ctx, topo_utility, topo_items = self.graph_memory_write_inputs(branches["topo"], graph_utility)
+            feat_ctx, feat_utility, feat_items = self.graph_memory_write_inputs(branches["feat"], graph_utility)
+            topo_stats = self.graph_memory_topo.write(topo_ctx, topo_utility, mode=self.cfg.memory_write_mode)
+            feat_stats = self.graph_memory_feat.write(feat_ctx, feat_utility, mode=self.cfg.memory_write_mode)
+            stats.update({f"graph_memory_topo_{key}": value for key, value in topo_stats.items()})
+            stats.update({f"graph_memory_feat_{key}": value for key, value in feat_stats.items()})
+            stats["graph_memory_topo_write_items"] = float(topo_items)
+            stats["graph_memory_feat_write_items"] = float(feat_items)
+            graph_write_items_total += float(topo_items + feat_items)
+            if self.cfg.use_graph_grad_branch and self.graph_memory_grad is not None and "grad" in branches:
+                grad_ctx, grad_utility, grad_items = self.graph_memory_write_inputs(branches["grad"], graph_utility)
+                grad_stats = self.graph_memory_grad.write(grad_ctx, grad_utility, mode=self.cfg.memory_write_mode)
+                stats.update({f"graph_memory_grad_{key}": value for key, value in grad_stats.items()})
+                stats["graph_memory_grad_write_items"] = float(grad_items)
+                graph_write_items_total += float(grad_items)
+            stats["graph_memory_write_items"] = graph_write_items_total
+        return stats
+
+    def param_correction(self, param_ctx: torch.Tensor) -> tuple[torch.Tensor, dict[str, float]]:
+        raw_channel_corr, _, _, _ = self.param_memory.read(param_ctx)
+        if self.cfg.param_memory_layout == "single" or self.param_memory_layer is None:
+            return raw_channel_corr, {
+                "param_memory_branch_count": 1.0,
+                "param_memory_channel_raw_correction_std": float(raw_channel_corr.detach().float().std(unbiased=False).item()),
+            }
+        raw_layer_corr, _, _, _ = self.param_memory_layer.read(param_ctx)
+        combined = 0.5 * (raw_channel_corr + raw_layer_corr)
+        return combined, {
+            "param_memory_branch_count": 2.0,
+            "param_memory_channel_raw_correction_std": float(raw_channel_corr.detach().float().std(unbiased=False).item()),
+            "param_memory_layer_raw_correction_std": float(raw_layer_corr.detach().float().std(unbiased=False).item()),
+            "param_memory_combined_raw_correction_std": float(combined.detach().float().std(unbiased=False).item()),
+        }
+
+    @torch.no_grad()
+    def write_param_memories(self, param_ctx: torch.Tensor, param_utility: torch.Tensor) -> dict[str, float]:
+        channel_stats = self.param_memory.write(param_ctx, param_utility, mode=self.cfg.memory_write_mode)
+        stats = {f"param_memory_{key}": value for key, value in channel_stats.items()}
+        stats["param_memory_branch_count"] = 1.0 if self.cfg.param_memory_layout == "single" else 2.0
+        if self.cfg.param_memory_layout == "multi" and self.param_memory_layer is not None:
+            layer_stats = self.param_memory_layer.write(param_ctx, param_utility, mode=self.cfg.memory_write_mode)
+            stats.update({f"param_memory_layer_{key}": value for key, value in layer_stats.items()})
+            stats["param_memory_layer_state_norm"] = float(self.param_memory_layer.state.norm().item())
         return stats

@@ -31,7 +31,7 @@ from ougp.trace import PruningTraceRecorder
 
 
 BACKBONES = ("gcn", "sage", "gat", "deepgcn")
-GRAPH_SCORE_INITS = ("constant", "random", "degree", "similarity")
+GRAPH_SCORE_INITS = ("constant", "random", "degree", "similarity", "topofeat")
 PARAM_SCORE_INITS = ("constant", "random", "magnitude")
 
 VARIANTS = {
@@ -66,8 +66,192 @@ VARIANTS = {
         param_score_init="magnitude",
         freeze_pruning_scores=True,
     ),
+    "dropedge_static": dict(
+        use_graph_pruning=True,
+        use_param_pruning=False,
+        use_memory=False,
+        use_cross=False,
+        graph_score_init="random",
+        freeze_pruning_scores=True,
+    ),
+    "neuralsparse_graph_dynamic": dict(
+        use_graph_pruning=True,
+        use_param_pruning=False,
+        use_memory=False,
+        use_cross=False,
+        graph_score_init="similarity",
+        freeze_pruning_scores=False,
+    ),
+    "neuralsparse_dual_dynamic": dict(
+        use_graph_pruning=True,
+        use_param_pruning=True,
+        use_memory=False,
+        use_cross=False,
+        graph_score_init="similarity",
+        param_score_init="magnitude",
+        freeze_pruning_scores=False,
+    ),
+    "dspar_graph_static": dict(
+        use_graph_pruning=True,
+        use_param_pruning=False,
+        use_memory=False,
+        use_cross=False,
+        graph_score_init="topofeat",
+        freeze_pruning_scores=True,
+    ),
+    "dspar_dual_static": dict(
+        use_graph_pruning=True,
+        use_param_pruning=True,
+        use_memory=False,
+        use_cross=False,
+        graph_score_init="topofeat",
+        param_score_init="magnitude",
+        freeze_pruning_scores=True,
+    ),
+    "magnitude_param_static": dict(
+        use_graph_pruning=False,
+        use_param_pruning=True,
+        use_memory=False,
+        use_cross=False,
+        param_score_init="magnitude",
+        freeze_pruning_scores=True,
+    ),
+    "snip_param_static": dict(
+        use_graph_pruning=False,
+        use_param_pruning=True,
+        use_memory=False,
+        use_cross=False,
+        freeze_pruning_scores=True,
+        gradient_param_init="snip",
+    ),
+    "grasp_param_static": dict(
+        use_graph_pruning=False,
+        use_param_pruning=True,
+        use_memory=False,
+        use_cross=False,
+        freeze_pruning_scores=True,
+        gradient_param_init="grasp",
+    ),
+    "degree_gradient_static": dict(
+        use_graph_pruning=True,
+        use_param_pruning=True,
+        use_memory=False,
+        use_cross=False,
+        graph_score_init="degree",
+        freeze_pruning_scores=True,
+        gradient_param_init="snip",
+    ),
+    "similarity_gradient_static": dict(
+        use_graph_pruning=True,
+        use_param_pruning=True,
+        use_memory=False,
+        use_cross=False,
+        graph_score_init="similarity",
+        freeze_pruning_scores=True,
+        gradient_param_init="snip",
+    ),
+    "degree_grasp_static": dict(
+        use_graph_pruning=True,
+        use_param_pruning=True,
+        use_memory=False,
+        use_cross=False,
+        graph_score_init="degree",
+        freeze_pruning_scores=True,
+        gradient_param_init="grasp",
+    ),
+    "similarity_grasp_static": dict(
+        use_graph_pruning=True,
+        use_param_pruning=True,
+        use_memory=False,
+        use_cross=False,
+        graph_score_init="similarity",
+        freeze_pruning_scores=True,
+        gradient_param_init="grasp",
+    ),
+    "lottery_param_static": dict(
+        use_graph_pruning=False,
+        use_param_pruning=True,
+        use_memory=False,
+        use_cross=False,
+        freeze_pruning_scores=True,
+        lottery_param_init=True,
+    ),
+    "degree_lottery_static": dict(
+        use_graph_pruning=True,
+        use_param_pruning=True,
+        use_memory=False,
+        use_cross=False,
+        graph_score_init="degree",
+        freeze_pruning_scores=True,
+        lottery_param_init=True,
+    ),
+    "similarity_lottery_static": dict(
+        use_graph_pruning=True,
+        use_param_pruning=True,
+        use_memory=False,
+        use_cross=False,
+        graph_score_init="similarity",
+        freeze_pruning_scores=True,
+        lottery_param_init=True,
+    ),
+    "rigl_param_dynamic": dict(
+        use_graph_pruning=False,
+        use_param_pruning=True,
+        use_memory=False,
+        use_cross=False,
+        freeze_pruning_scores=True,
+        rigl_param_update=True,
+    ),
+    "degree_rigl_dynamic": dict(
+        use_graph_pruning=True,
+        use_param_pruning=True,
+        use_memory=False,
+        use_cross=False,
+        graph_score_init="degree",
+        freeze_pruning_scores=True,
+        rigl_param_update=True,
+    ),
+    "similarity_rigl_dynamic": dict(
+        use_graph_pruning=True,
+        use_param_pruning=True,
+        use_memory=False,
+        use_cross=False,
+        graph_score_init="similarity",
+        freeze_pruning_scores=True,
+        rigl_param_update=True,
+    ),
+    "ace_eagles_unified_dynamic": dict(
+        use_graph_pruning=True,
+        use_param_pruning=True,
+        use_memory=False,
+        use_cross=False,
+        graph_score_init="topofeat",
+        param_score_init="magnitude",
+        freeze_pruning_scores=False,
+        unified_score_update=True,
+        variant_budget_lambda=0.05,
+    ),
+    "serial_degree_magnitude_static": dict(
+        use_graph_pruning=True,
+        use_param_pruning=True,
+        use_memory=False,
+        use_cross=False,
+        graph_score_init="degree",
+        param_score_init="magnitude",
+        freeze_pruning_scores=True,
+        serial_pruning=True,
+    ),
     "ougp_no_cross": dict(use_graph_pruning=True, use_param_pruning=True, use_memory=True, use_cross=False),
     "ougp": dict(use_graph_pruning=True, use_param_pruning=True, use_memory=True, use_cross=True),
+}
+
+VARIANT_PRIVATE_KEYS = {
+    "gradient_param_init",
+    "lottery_param_init",
+    "rigl_param_update",
+    "serial_pruning",
+    "unified_score_update",
+    "variant_budget_lambda",
 }
 
 
@@ -105,6 +289,213 @@ def target_keep_at(epoch: int, epochs: int, warmup_epochs: int, target_keep: flo
     span = max(1, epochs - warmup_epochs)
     ratio = min(1.0, (epoch - warmup_epochs + 1) / span)
     return 1.0 - ratio * (1.0 - target_keep)
+
+
+def serial_param_keep_at(epoch: int, epochs: int, warmup_epochs: int, target_keep: float) -> float:
+    """Delay parameter pruning until graph pruning has had a dedicated phase."""
+
+    serial_warmup = warmup_epochs + max(1, (epochs - warmup_epochs) // 2)
+    return target_keep_at(epoch, epochs, serial_warmup, target_keep)
+
+
+def channel_snip_scores(model: OUGPGCN) -> torch.Tensor:
+    """Aggregate |w * grad| saliency into one score per hidden channel."""
+
+    def row_score(layer: torch.nn.Linear) -> torch.Tensor:
+        if layer.weight.grad is None:
+            return torch.zeros(layer.weight.size(0), device=layer.weight.device)
+        return (layer.weight.detach() * layer.weight.grad.detach()).abs().sum(dim=1)
+
+    def col_score(layer: torch.nn.Linear) -> torch.Tensor:
+        if layer.weight.grad is None:
+            return torch.zeros(layer.weight.size(1), device=layer.weight.device)
+        return (layer.weight.detach() * layer.weight.grad.detach()).abs().sum(dim=0)
+
+    scores = row_score(model.lin1) + col_score(model.lin2)
+    if model.cfg.backbone == "sage":
+        if model.sage_lin1_neigh is None or model.sage_lin2_neigh is None:
+            raise RuntimeError("GraphSAGE layers were not initialized.")
+        scores = scores + row_score(model.sage_lin1_neigh) + col_score(model.sage_lin2_neigh)
+    elif model.cfg.backbone == "gat":
+        if model.gat_attn1_src is not None and model.gat_attn1_src.grad is not None:
+            scores = scores + (model.gat_attn1_src.detach() * model.gat_attn1_src.grad.detach()).abs()
+        if model.gat_attn1_dst is not None and model.gat_attn1_dst.grad is not None:
+            scores = scores + (model.gat_attn1_dst.detach() * model.gat_attn1_dst.grad.detach()).abs()
+    elif model.cfg.backbone == "deepgcn":
+        for layer in model.deep_hidden_lins:
+            scores = scores + row_score(layer) + col_score(layer)
+    return scores
+
+
+def channel_grasp_scores(model: OUGPGCN, second_grads: dict[int, torch.Tensor | None]) -> torch.Tensor:
+    """Aggregate GraSP-style second-order saliency into one score per channel."""
+
+    def saliency(param: torch.Tensor) -> torch.Tensor:
+        grad = second_grads.get(id(param))
+        if grad is None:
+            return torch.zeros_like(param)
+        return (-param.detach() * grad.detach()).abs()
+
+    def row_score(layer: torch.nn.Linear) -> torch.Tensor:
+        return saliency(layer.weight).sum(dim=1)
+
+    def col_score(layer: torch.nn.Linear) -> torch.Tensor:
+        return saliency(layer.weight).sum(dim=0)
+
+    scores = row_score(model.lin1) + col_score(model.lin2)
+    if model.cfg.backbone == "sage":
+        if model.sage_lin1_neigh is None or model.sage_lin2_neigh is None:
+            raise RuntimeError("GraphSAGE layers were not initialized.")
+        scores = scores + row_score(model.sage_lin1_neigh) + col_score(model.sage_lin2_neigh)
+    elif model.cfg.backbone == "gat":
+        if model.gat_attn1_src is not None:
+            scores = scores + saliency(model.gat_attn1_src)
+        if model.gat_attn1_dst is not None:
+            scores = scores + saliency(model.gat_attn1_dst)
+    elif model.cfg.backbone == "deepgcn":
+        for layer in model.deep_hidden_lins:
+            scores = scores + row_score(layer) + col_score(layer)
+    return scores
+
+
+def initialize_param_scores_from_gradient(
+    model: OUGPGCN,
+    x: torch.Tensor,
+    y: torch.Tensor,
+    train_mask: torch.Tensor,
+    task_type: str,
+    method: str = "snip",
+) -> None:
+    """Initialize channel pruning scores with early gradient saliency."""
+
+    original_cfg = model.cfg
+    model.cfg = OUGPConfig(
+        **{
+            **asdict(original_cfg),
+            "use_graph_pruning": False,
+            "use_param_pruning": False,
+            "use_memory": False,
+            "use_cross": False,
+            "graph_target_keep": 1.0,
+            "param_target_keep": 1.0,
+        }
+    )
+    model.zero_grad(set_to_none=True)
+    logits, _ = model(x, temperature=1.0)
+    if task_type == "multilabel":
+        loss = F.binary_cross_entropy_with_logits(logits[train_mask], y[train_mask])
+    else:
+        loss = F.cross_entropy(logits[train_mask], y[train_mask])
+    if method == "snip":
+        loss.backward()
+        scores = channel_snip_scores(model)
+    elif method == "grasp":
+        params = [param for param in model.parameters() if param.requires_grad]
+        first_grads = torch.autograd.grad(loss, params, create_graph=True, allow_unused=True)
+        grad_energy = sum(grad.pow(2).sum() for grad in first_grads if grad is not None)
+        second = torch.autograd.grad(grad_energy, params, allow_unused=True)
+        scores = channel_grasp_scores(model, {id(param): grad for param, grad in zip(params, second)})
+    else:
+        raise ValueError(f"Unknown gradient parameter init method {method!r}.")
+    with torch.no_grad():
+        model.param_logits.copy_(model.normalized_init_scores(scores).to(model.param_logits.device, model.param_logits.dtype))
+    model.zero_grad(set_to_none=True)
+    model.cfg = original_cfg
+
+
+def initialize_param_scores_from_lottery_pretrain(
+    model: OUGPGCN,
+    x: torch.Tensor,
+    y: torch.Tensor,
+    train_mask: torch.Tensor,
+    task_type: str,
+    epochs: int,
+    lr: float,
+    weight_decay: float,
+) -> None:
+    """Lottery-ticket-style channel score: pretrain dense, score, then rewind."""
+
+    initial_state = {name: value.detach().clone() for name, value in model.state_dict().items()}
+    original_cfg = model.cfg
+    dense_cfg = OUGPConfig(
+        **{
+            **asdict(original_cfg),
+            "use_graph_pruning": False,
+            "use_param_pruning": False,
+            "use_memory": False,
+            "use_cross": False,
+            "graph_target_keep": 1.0,
+            "param_target_keep": 1.0,
+        }
+    )
+    model.cfg = dense_cfg
+
+    if epochs > 0:
+        optimizer = torch.optim.Adam([param for param in model.parameters() if param.requires_grad], lr=lr, weight_decay=weight_decay)
+        for _ in range(epochs):
+            model.train()
+            optimizer.zero_grad(set_to_none=True)
+            logits, _ = model(x, temperature=1.0)
+            if task_type == "multilabel":
+                loss = F.binary_cross_entropy_with_logits(logits[train_mask], y[train_mask])
+            else:
+                loss = F.cross_entropy(logits[train_mask], y[train_mask])
+            loss.backward()
+            optimizer.step()
+
+    with torch.no_grad():
+        scores = model.initial_param_scores("magnitude")
+    model.load_state_dict(initial_state, strict=False)
+    model.cfg = original_cfg
+    model.reset_memory()
+    with torch.no_grad():
+        model.param_logits.copy_(scores.to(model.param_logits.device, model.param_logits.dtype))
+    model.zero_grad(set_to_none=True)
+
+
+@torch.no_grad()
+def update_param_scores_from_rigl(model: OUGPGCN, gradient_alpha: float) -> dict[str, float]:
+    """Refresh channel scores with a RigL-like magnitude/gradient signal."""
+
+    grad_scores = channel_snip_scores(model)
+    mag_scores = model.initial_param_scores("magnitude")
+    grad_unit = model.normalized_init_scores(grad_scores).to(mag_scores.device, mag_scores.dtype)
+    alpha = float(max(0.0, min(1.0, gradient_alpha)))
+    scores = (1.0 - alpha) * mag_scores + alpha * grad_unit
+    scores = model.normalized_init_scores(scores).to(model.param_logits.device, model.param_logits.dtype)
+    model.param_logits.copy_(scores)
+    return {
+        "rigl_param_updates": 1.0,
+        "rigl_param_score_mean": float(scores.detach().float().mean().item()),
+        "rigl_param_score_std": float(scores.detach().float().std(unbiased=False).item()),
+    }
+
+
+@torch.no_grad()
+def update_scores_from_unified_dual(model: OUGPGCN, gradient_alpha: float) -> dict[str, float]:
+    """ACE/EAGLES-inspired centralized refresh of graph and channel scores."""
+
+    graph_base = model.initial_edge_scores("topofeat")
+    if model.edge_logits.grad is None:
+        graph_grad = torch.zeros_like(graph_base)
+    else:
+        graph_grad = (model.edge_logits.detach() * model.edge_logits.grad.detach()).abs()
+    graph_grad = model.normalized_init_scores(graph_grad).to(graph_base.device, graph_base.dtype)
+
+    param_base = model.initial_param_scores("magnitude")
+    param_grad = channel_snip_scores(model)
+    param_grad = model.normalized_init_scores(param_grad).to(param_base.device, param_base.dtype)
+
+    alpha = float(max(0.0, min(1.0, gradient_alpha)))
+    graph_scores = model.normalized_init_scores((1.0 - alpha) * graph_base + alpha * graph_grad)
+    param_scores = model.normalized_init_scores((1.0 - alpha) * param_base + alpha * param_grad)
+    model.edge_logits.copy_(graph_scores.to(model.edge_logits.device, model.edge_logits.dtype))
+    model.param_logits.copy_(param_scores.to(model.param_logits.device, model.param_logits.dtype))
+    return {
+        "unified_score_updates": 1.0,
+        "unified_graph_score_std": float(graph_scores.detach().float().std(unbiased=False).item()),
+        "unified_param_score_std": float(param_scores.detach().float().std(unbiased=False).item()),
+    }
 
 
 @torch.no_grad()
@@ -188,11 +579,25 @@ def run_one(args: argparse.Namespace, dataset, variant: str, seed: int, out_dir:
         param_target_keep=1.0 - args.param_sparsity,
         graph_gamma=args.graph_gamma,
         param_gamma=args.param_gamma,
+        graph_score_scale_decay=args.graph_score_scale_decay,
+        graph_score_scale_min=args.graph_score_scale_min,
+        graph_score_scale_max=args.graph_score_scale_max,
+        graph_correction_clip=args.graph_correction_clip,
         param_score_scale_decay=args.param_score_scale_decay,
         param_score_scale_min=args.param_score_scale_min,
         param_score_scale_max=args.param_score_scale_max,
         param_correction_clip=args.param_correction_clip,
         cross_gamma=args.cross_gamma,
+        use_hidden_coupling=args.use_hidden_coupling,
+        hidden_coupling_mix_graph=args.hidden_coupling_mix_graph,
+        hidden_coupling_mix_param=args.hidden_coupling_mix_param,
+        hidden_coupling_interval=args.hidden_coupling_interval,
+        hidden_coupling_start_epoch=args.hidden_coupling_start_epoch,
+        hidden_coupling_layer_norm_weight=args.hidden_coupling_layer_norm_weight,
+        hidden_coupling_interaction_weight=args.hidden_coupling_interaction_weight,
+        hidden_coupling_relation_weight=args.hidden_coupling_relation_weight,
+        hidden_coupling_param_damage_weight=args.hidden_coupling_param_damage_weight,
+        hidden_coupling_graph_damage_weight=args.hidden_coupling_graph_damage_weight,
         write_beta=args.write_beta,
         write_lambda=args.write_lambda,
         event_gamma=args.event_gamma,
@@ -211,17 +616,50 @@ def run_one(args: argparse.Namespace, dataset, variant: str, seed: int, out_dir:
         backbone=args.backbone,
         budget_target=args.budget_target,
         memory_write_mode=args.memory_write_mode,
+        graph_memory_granularity=args.graph_memory_granularity,
+        graph_memory_layout=args.graph_memory_layout,
+        use_graph_full_branch=args.use_graph_full_branch,
+        use_graph_grad_branch=args.use_graph_grad_branch,
+        use_graph_branch_gates=args.use_graph_branch_gates,
+        param_memory_layout=args.param_memory_layout,
         graph_score_init=args.graph_score_init,
         param_score_init=args.param_score_init,
         freeze_pruning_scores=args.freeze_pruning_scores,
         seed=seed,
     )
-    cfg_kwargs.update(VARIANTS[variant])
+    variant_options = dict(VARIANTS[variant])
+    gradient_param_init = variant_options.pop("gradient_param_init", False)
+    if gradient_param_init is True:
+        gradient_param_init = "snip"
+    if gradient_param_init not in (False, "snip", "grasp"):
+        raise ValueError(f"Unknown gradient parameter init setting {gradient_param_init!r}.")
+    lottery_param_init = bool(variant_options.pop("lottery_param_init", False))
+    rigl_param_update = bool(variant_options.pop("rigl_param_update", False))
+    serial_pruning = bool(variant_options.pop("serial_pruning", False))
+    unified_score_update = bool(variant_options.pop("unified_score_update", False))
+    variant_budget_lambda = variant_options.pop("variant_budget_lambda", None)
+    private_leftovers = VARIANT_PRIVATE_KEYS.intersection(variant_options)
+    if private_leftovers:
+        raise ValueError(f"Unhandled private variant keys: {sorted(private_leftovers)}")
+    cfg_kwargs.update(variant_options)
     model = OUGPGCN(OUGPConfig(**cfg_kwargs), edge_index=edge_index, x=x).to(device)
+    if gradient_param_init:
+        initialize_param_scores_from_gradient(model, x, y, train_mask, data.task_type, method=str(gradient_param_init))
+    if lottery_param_init:
+        initialize_param_scores_from_lottery_pretrain(
+            model,
+            x,
+            y,
+            train_mask,
+            data.task_type,
+            epochs=args.lottery_pretrain_epochs,
+            lr=args.lr,
+            weight_decay=args.weight_decay,
+        )
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     trace_recorder = (
         PruningTraceRecorder(out_dir, args.dataset, variant, seed)
-        if args.trace_pruning and VARIANTS[variant]["use_graph_pruning"]
+        if args.trace_pruning and variant_options.get("use_graph_pruning", cfg_kwargs["use_graph_pruning"])
         else None
     )
 
@@ -234,7 +672,10 @@ def run_one(args: argparse.Namespace, dataset, variant: str, seed: int, out_dir:
     for epoch in range(args.epochs):
         model.train()
         keep_g = target_keep_at(epoch, args.epochs, args.warmup_epochs, 1.0 - args.graph_sparsity)
-        keep_w = target_keep_at(epoch, args.epochs, args.warmup_epochs, 1.0 - args.param_sparsity)
+        if serial_pruning:
+            keep_w = serial_param_keep_at(epoch, args.epochs, args.warmup_epochs, 1.0 - args.param_sparsity)
+        else:
+            keep_w = target_keep_at(epoch, args.epochs, args.warmup_epochs, 1.0 - args.param_sparsity)
         model.cfg = OUGPConfig(**{**asdict(model.cfg), "graph_target_keep": keep_g, "param_target_keep": keep_w})
         temperature = temperature_at(epoch, args.epochs, args.temp_start, args.temp_end)
 
@@ -245,10 +686,25 @@ def run_one(args: argparse.Namespace, dataset, variant: str, seed: int, out_dir:
         else:
             task_loss = F.cross_entropy(logits[train_mask], y[train_mask])
         loss = task_loss + args.sparsity_lambda * model.regularization()
-        if args.budget_lambda != 0.0:
-            loss = loss + args.budget_lambda * model.resource_regularization()
+        effective_budget_lambda = float(args.budget_lambda if variant_budget_lambda is None else variant_budget_lambda)
+        if effective_budget_lambda != 0.0:
+            loss = loss + effective_budget_lambda * model.resource_regularization()
         loss.backward()
-        memory_stats = model.write_memories()
+        rigl_stats = {}
+        if (
+            rigl_param_update
+            and epoch >= args.warmup_epochs
+            and (epoch - args.warmup_epochs) % args.rigl_update_interval == 0
+        ):
+            rigl_stats = update_param_scores_from_rigl(model, args.rigl_gradient_alpha)
+        unified_stats = {}
+        if (
+            unified_score_update
+            and epoch >= args.warmup_epochs
+            and (epoch - args.warmup_epochs) % args.unified_update_interval == 0
+        ):
+            unified_stats = update_scores_from_unified_dual(model, args.unified_gradient_alpha)
+        memory_stats = model.write_memories(x=x, temperature=temperature, epoch=epoch)
         trace_stats = {}
         if trace_recorder is not None and epoch % args.trace_every == 0:
             graph_events = model.graph_trace_snapshot(
@@ -307,6 +763,8 @@ def run_one(args: argparse.Namespace, dataset, variant: str, seed: int, out_dir:
             **eval_resource_stats,
             **churn_stats,
             **memory_stats,
+            **rigl_stats,
+            **unified_stats,
             **trace_stats,
             **diagnostic_stats,
         }
@@ -319,6 +777,15 @@ def run_one(args: argparse.Namespace, dataset, variant: str, seed: int, out_dir:
             )
             if args.score_diagnostics:
                 message += (
+                    f" graph_logits_mean={eval_mask_stats['graph_logits_mean']:.6f}"
+                    f" graph_logits_std={eval_mask_stats['graph_logits_std']:.6f}"
+                    f" graph_memory_correction_mean={eval_mask_stats['graph_memory_correction_mean']:.6f}"
+                    f" graph_memory_correction_std={eval_mask_stats['graph_memory_correction_std']:.6f}"
+                    f" graph_memory_unit_correction_std={eval_mask_stats['graph_memory_unit_correction_std']:.6f}"
+                    f" graph_memory_raw_correction_mean={eval_mask_stats['graph_memory_raw_correction_mean']:.6f}"
+                    f" graph_memory_raw_correction_std={eval_mask_stats['graph_memory_raw_correction_std']:.6f}"
+                    f" graph_score_scale={eval_mask_stats['graph_score_scale']:.6f}"
+                    f" graph_memory_score_delta_std={eval_mask_stats['graph_memory_score_delta_std']:.6f}"
                     f" param_logits_mean={eval_mask_stats['param_logits_mean']:.6f}"
                     f" param_logits_std={eval_mask_stats['param_logits_std']:.6f}"
                     f" param_memory_correction_mean={eval_mask_stats['param_memory_correction_mean']:.6f}"
@@ -390,9 +857,26 @@ def run_one(args: argparse.Namespace, dataset, variant: str, seed: int, out_dir:
         "num_gnn_layers": args.num_gnn_layers,
         "memory_rank": args.memory_rank,
         "memory_write_mode": args.memory_write_mode,
+        "graph_memory_granularity": args.graph_memory_granularity,
+        "graph_memory_layout": args.graph_memory_layout,
+        "use_graph_full_branch": bool(args.use_graph_full_branch),
+        "use_graph_grad_branch": bool(args.use_graph_grad_branch),
+        "param_memory_layout": args.param_memory_layout,
         "graph_score_init": cfg_kwargs["graph_score_init"],
         "param_score_init": cfg_kwargs["param_score_init"],
         "freeze_pruning_scores": bool(cfg_kwargs["freeze_pruning_scores"]),
+        "gradient_param_init": bool(gradient_param_init),
+        "gradient_param_method": str(gradient_param_init) if gradient_param_init else "none",
+        "lottery_param_init": bool(lottery_param_init),
+        "lottery_pretrain_epochs": int(args.lottery_pretrain_epochs if lottery_param_init else 0),
+        "rigl_param_update": bool(rigl_param_update),
+        "rigl_update_interval": int(args.rigl_update_interval if rigl_param_update else 0),
+        "rigl_gradient_alpha": float(args.rigl_gradient_alpha if rigl_param_update else 0.0),
+        "unified_score_update": bool(unified_score_update),
+        "unified_update_interval": int(args.unified_update_interval if unified_score_update else 0),
+        "unified_gradient_alpha": float(args.unified_gradient_alpha if unified_score_update else 0.0),
+        "effective_budget_lambda": float(args.budget_lambda if variant_budget_lambda is None else variant_budget_lambda),
+        "serial_pruning": bool(serial_pruning),
         "backbone": args.backbone,
         "param_memory_slots": int(getattr(model.param_memory, "num_channels", 1)),
         "task_type": data.task_type,
@@ -503,37 +987,27 @@ def _fill_random_nodes(keep: torch.Tensor, remaining: int, generator: torch.Gene
     return added
 
 
-def _build_undirected_adjacency(edge_index: torch.Tensor, num_nodes: int) -> list[list[int]]:
-    adjacency: list[list[int]] = [[] for _ in range(num_nodes)]
-    row, col = edge_index.cpu()
-    for src, dst in zip(row.tolist(), col.tolist()):
-        if 0 <= src < num_nodes and 0 <= dst < num_nodes:
-            adjacency[src].append(dst)
-            if src != dst:
-                adjacency[dst].append(src)
-    return adjacency
-
-
 def _fill_frontier_nodes(dataset: CitationGraph, keep: torch.Tensor, remaining: int, generator: torch.Generator) -> int:
     if remaining <= 0:
         return 0
-    adjacency = _build_undirected_adjacency(dataset.edge_index, dataset.num_nodes)
-    frontier = keep.nonzero(as_tuple=False).flatten().tolist()
+    row, col = dataset.edge_index.cpu()
+    frontier = keep.clone()
     added = 0
-    while added < remaining and frontier:
-        candidate_seen: dict[int, None] = {}
-        for node in frontier:
-            for neighbor in adjacency[node]:
-                if not bool(keep[neighbor].item()):
-                    candidate_seen.setdefault(neighbor, None)
-        if not candidate_seen:
+    while added < remaining and bool(frontier.any().item()):
+        src_frontier = frontier[row]
+        dst_frontier = frontier[col]
+        candidates = torch.cat([col[src_frontier], row[dst_frontier]])
+        if candidates.numel() == 0:
             break
-        candidates = torch.tensor(list(candidate_seen.keys()), dtype=torch.long)
+        candidates = torch.unique(candidates[~keep[candidates]])
+        if candidates.numel() == 0:
+            break
         order = torch.randperm(candidates.numel(), generator=generator)
         selected = candidates[order[: min(remaining - added, candidates.numel())]]
         keep[selected] = True
         added += int(selected.numel())
-        frontier = selected.tolist()
+        frontier.zero_()
+        frontier[selected] = True
     return added
 
 
@@ -618,9 +1092,26 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--num-gnn-layers", type=int, default=2)
     parser.add_argument("--memory-rank", type=int, default=8)
     parser.add_argument("--memory-write-mode", choices=["residual", "feature", "none"], default="residual")
+    parser.add_argument("--graph-memory-granularity", choices=["edge", "subgraph"], default="edge")
+    parser.add_argument("--graph-memory-layout", choices=["single", "multi"], default="single")
+    parser.add_argument("--use-graph-full-branch", dest="use_graph_full_branch", action="store_true")
+    parser.add_argument("--no-graph-full-branch", dest="use_graph_full_branch", action="store_false")
+    parser.add_argument("--use-graph-grad-branch", dest="use_graph_grad_branch", action="store_true")
+    parser.add_argument("--no-graph-grad-branch", dest="use_graph_grad_branch", action="store_false")
+    parser.add_argument("--use-graph-branch-gates", dest="use_graph_branch_gates", action="store_true")
+    parser.add_argument("--no-graph-branch-gates", dest="use_graph_branch_gates", action="store_false")
+    parser.set_defaults(use_graph_full_branch=True)
+    parser.set_defaults(use_graph_grad_branch=True)
+    parser.set_defaults(use_graph_branch_gates=True)
+    parser.add_argument("--param-memory-layout", choices=["single", "multi"], default="single")
     parser.add_argument("--graph-score-init", choices=GRAPH_SCORE_INITS, default="constant")
     parser.add_argument("--param-score-init", choices=PARAM_SCORE_INITS, default="constant")
     parser.add_argument("--freeze-pruning-scores", action="store_true")
+    parser.add_argument("--lottery-pretrain-epochs", type=int, default=5)
+    parser.add_argument("--rigl-update-interval", type=int, default=10)
+    parser.add_argument("--rigl-gradient-alpha", type=float, default=0.5)
+    parser.add_argument("--unified-update-interval", type=int, default=10)
+    parser.add_argument("--unified-gradient-alpha", type=float, default=0.5)
     parser.add_argument("--graph-sparsity", type=float, default=0.30)
     parser.add_argument("--param-sparsity", type=float, default=0.30)
     parser.add_argument("--lr", type=float, default=0.01)
@@ -630,11 +1121,25 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--budget-target", type=float, default=0.70)
     parser.add_argument("--graph-gamma", type=float, default=0.35)
     parser.add_argument("--param-gamma", type=float, default=0.35)
+    parser.add_argument("--graph-score-scale-decay", type=float, default=0.95)
+    parser.add_argument("--graph-score-scale-min", type=float, default=0.02)
+    parser.add_argument("--graph-score-scale-max", type=float, default=0.50)
+    parser.add_argument("--graph-correction-clip", type=float, default=2.0)
     parser.add_argument("--param-score-scale-decay", type=float, default=0.95)
     parser.add_argument("--param-score-scale-min", type=float, default=0.02)
     parser.add_argument("--param-score-scale-max", type=float, default=0.50)
     parser.add_argument("--param-correction-clip", type=float, default=2.0)
     parser.add_argument("--cross-gamma", type=float, default=0.20)
+    parser.add_argument("--use-hidden-coupling", action="store_true")
+    parser.add_argument("--hidden-coupling-mix-graph", type=float, default=0.0)
+    parser.add_argument("--hidden-coupling-mix-param", type=float, default=0.0)
+    parser.add_argument("--hidden-coupling-interval", type=int, default=1)
+    parser.add_argument("--hidden-coupling-start-epoch", type=int, default=0)
+    parser.add_argument("--hidden-coupling-layer-norm-weight", type=float, default=1.0)
+    parser.add_argument("--hidden-coupling-interaction-weight", type=float, default=1.0)
+    parser.add_argument("--hidden-coupling-relation-weight", type=float, default=1.0)
+    parser.add_argument("--hidden-coupling-param-damage-weight", type=float, default=1.0)
+    parser.add_argument("--hidden-coupling-graph-damage-weight", type=float, default=1.0)
     parser.add_argument("--write-beta", type=float, default=0.12)
     parser.add_argument("--write-lambda", type=float, default=0.98)
     parser.add_argument("--event-gamma", type=float, default=0.0)
@@ -680,12 +1185,30 @@ def validate_gpu_budget(args: argparse.Namespace) -> None:
         raise ValueError("--node-sample-size must be non-negative.")
     if args.budget_lambda < 0:
         raise ValueError("--budget-lambda must be non-negative.")
+    if args.lottery_pretrain_epochs < 0:
+        raise ValueError("--lottery-pretrain-epochs must be non-negative.")
+    if args.rigl_update_interval <= 0:
+        raise ValueError("--rigl-update-interval must be positive.")
+    if not 0.0 <= args.rigl_gradient_alpha <= 1.0:
+        raise ValueError("--rigl-gradient-alpha must be in [0, 1].")
+    if args.unified_update_interval <= 0:
+        raise ValueError("--unified-update-interval must be positive.")
+    if not 0.0 <= args.unified_gradient_alpha <= 1.0:
+        raise ValueError("--unified-gradient-alpha must be in [0, 1].")
+    if args.hidden_coupling_interval <= 0:
+        raise ValueError("--hidden-coupling-interval must be positive.")
+    if args.hidden_coupling_start_epoch < 0:
+        raise ValueError("--hidden-coupling-start-epoch must be non-negative.")
+    if not 0.0 <= args.hidden_coupling_mix_graph <= 1.0:
+        raise ValueError("--hidden-coupling-mix-graph must be in [0, 1].")
+    if not 0.0 <= args.hidden_coupling_mix_param <= 1.0:
+        raise ValueError("--hidden-coupling-mix-param must be in [0, 1].")
     if not 0.0 < args.budget_target <= 1.0:
         raise ValueError("--budget-target must be in (0, 1].")
     if args.num_gnn_layers < 2:
         raise ValueError("--num-gnn-layers must be at least 2.")
-    if args.backbone != "deepgcn" and args.num_gnn_layers != 2:
-        raise ValueError("--num-gnn-layers is currently only configurable with --backbone deepgcn.")
+    if args.backbone not in {"gcn", "deepgcn"} and args.num_gnn_layers != 2:
+        raise ValueError("--num-gnn-layers is currently only configurable with --backbone gcn/deepgcn.")
     if args.backbone == "deepgcn" and args.num_gnn_layers < 3:
         raise ValueError("--backbone deepgcn requires --num-gnn-layers >= 3.")
     if args.max_gpus > 4:

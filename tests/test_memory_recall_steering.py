@@ -57,6 +57,50 @@ def test_channel_pruning_memory_keeps_per_channel_state() -> None:
     assert not torch.allclose(before_corr, after_corr)
 
 
+def test_graph_multistate_branch_gates_and_scale_alignment() -> None:
+    torch.manual_seed(7)
+    x = torch.randn(8, 4)
+    y = torch.tensor([0, 1, 2, 0, 1, 2, 0, 1])
+    edge_index = torch.tensor(
+        [
+            [0, 1, 2, 3, 4, 5, 6, 7, 1, 2],
+            [1, 2, 3, 4, 5, 6, 7, 0, 0, 1],
+        ],
+        dtype=torch.long,
+    )
+    cfg = OUGPConfig(
+        in_dim=4,
+        hidden_dim=5,
+        out_dim=3,
+        num_nodes=8,
+        num_edges=edge_index.size(1),
+        memory_rank=3,
+        graph_target_keep=0.7,
+        param_target_keep=0.6,
+        graph_memory_layout="multi",
+        use_graph_full_branch=False,
+        use_graph_grad_branch=False,
+        use_graph_branch_gates=True,
+        graph_gamma=0.2,
+        param_gamma=0.2,
+    )
+    model = OUGPGCN(cfg, edge_index=edge_index, x=x)
+
+    logits, stats = model(x, temperature=1.0)
+    loss = F.cross_entropy(logits, y)
+    loss.backward()
+    memory_stats = model.write_memories()
+
+    assert stats["graph_memory_branch_count"] == 2.0
+    assert stats["graph_branch_gate_topo"] == pytest.approx(0.5)
+    assert stats["graph_branch_gate_feat"] == pytest.approx(0.5)
+    assert stats["graph_score_scale"] <= cfg.graph_score_scale_max
+    assert "graph_memory_unit_correction_std" in stats
+    assert memory_stats["graph_memory_write_items"] == 20.0
+    assert memory_stats["graph_memory_topo_write_items"] == 10.0
+    assert memory_stats["graph_memory_feat_write_items"] == 10.0
+
+
 def test_memory_write_modes_control_state_updates() -> None:
     torch.manual_seed(0)
     context = torch.randn(4, 3)
@@ -277,6 +321,185 @@ def test_model_memory_write_none_skips_online_state_updates() -> None:
     assert model.param_memory.state.norm() == 0
     assert model.graph_memory.recall_bias.norm() == 0
     assert model.param_memory.recall_bias.norm() == 0
+
+
+def test_graph_memory_subgraph_granularity_aggregates_single_write() -> None:
+    torch.manual_seed(6)
+    x = torch.randn(6, 4)
+    y = torch.tensor([0, 1, 0, 1, 0, 1])
+    edge_index = torch.tensor(
+        [
+            [0, 1, 2, 3, 4, 5, 0, 2],
+            [1, 2, 3, 4, 5, 0, 2, 0],
+        ],
+        dtype=torch.long,
+    )
+    cfg = OUGPConfig(
+        in_dim=4,
+        hidden_dim=5,
+        out_dim=2,
+        num_nodes=6,
+        num_edges=edge_index.size(1),
+        graph_target_keep=0.7,
+        param_target_keep=0.6,
+        graph_memory_granularity="subgraph",
+    )
+    model = OUGPGCN(cfg, edge_index=edge_index, x=x)
+
+    logits, _stats = model(x, temperature=1.0)
+    loss = F.cross_entropy(logits, y)
+    loss.backward()
+    memory_stats = model.write_memories()
+
+    assert memory_stats["graph_memory_write_granularity"] == 2.0
+    assert memory_stats["graph_memory_write_items"] == 1.0
+    assert model.graph_memory.state.norm() > 0
+
+
+def test_graph_multi_state_memory_updates_auxiliary_branches() -> None:
+    torch.manual_seed(7)
+    x = torch.randn(6, 4)
+    y = torch.tensor([0, 1, 0, 1, 0, 1])
+    edge_index = torch.tensor(
+        [
+            [0, 1, 2, 3, 4, 5, 0, 2],
+            [1, 2, 3, 4, 5, 0, 2, 0],
+        ],
+        dtype=torch.long,
+    )
+    cfg = OUGPConfig(
+        in_dim=4,
+        hidden_dim=5,
+        out_dim=2,
+        num_nodes=6,
+        num_edges=edge_index.size(1),
+        graph_target_keep=0.7,
+        param_target_keep=0.6,
+        graph_memory_layout="multi",
+    )
+    model = OUGPGCN(cfg, edge_index=edge_index, x=x)
+
+    logits, _stats = model(x, temperature=1.0)
+    loss = F.cross_entropy(logits, y)
+    loss.backward()
+    memory_stats = model.write_memories()
+    resource_stats = model.resource_stats()
+
+    assert memory_stats["graph_memory_branch_count"] == 4.0
+    assert model.graph_memory_topo is not None
+    assert model.graph_memory_feat is not None
+    assert model.graph_memory_grad is not None
+    assert model.graph_memory_topo.state.norm() > 0
+    assert model.graph_memory_feat.state.norm() > 0
+    assert model.graph_memory_grad.state.norm() > 0
+    assert resource_stats["memory_state_items"] > float(cfg.memory_rank * cfg.memory_rank)
+
+
+def test_graph_multi_state_without_grad_branch_uses_three_branches() -> None:
+    torch.manual_seed(9)
+    x = torch.randn(6, 4)
+    y = torch.tensor([0, 1, 0, 1, 0, 1])
+    edge_index = torch.tensor(
+        [
+            [0, 1, 2, 3, 4, 5, 0, 2],
+            [1, 2, 3, 4, 5, 0, 2, 0],
+        ],
+        dtype=torch.long,
+    )
+    cfg = OUGPConfig(
+        in_dim=4,
+        hidden_dim=5,
+        out_dim=2,
+        num_nodes=6,
+        num_edges=edge_index.size(1),
+        graph_target_keep=0.7,
+        param_target_keep=0.6,
+        graph_memory_layout="multi",
+        use_graph_grad_branch=False,
+    )
+    model = OUGPGCN(cfg, edge_index=edge_index, x=x)
+
+    logits, _stats = model(x, temperature=1.0)
+    loss = F.cross_entropy(logits, y)
+    loss.backward()
+    memory_stats = model.write_memories()
+
+    assert memory_stats["graph_memory_branch_count"] == 3.0
+    assert model.graph_memory_topo is not None
+    assert model.graph_memory_feat is not None
+    assert model.graph_memory_grad is None
+
+
+def test_graph_multi_state_topo_feat_only_uses_two_branches() -> None:
+    torch.manual_seed(10)
+    x = torch.randn(6, 4)
+    y = torch.tensor([0, 1, 0, 1, 0, 1])
+    edge_index = torch.tensor(
+        [
+            [0, 1, 2, 3, 4, 5, 0, 2],
+            [1, 2, 3, 4, 5, 0, 2, 0],
+        ],
+        dtype=torch.long,
+    )
+    cfg = OUGPConfig(
+        in_dim=4,
+        hidden_dim=5,
+        out_dim=2,
+        num_nodes=6,
+        num_edges=edge_index.size(1),
+        graph_target_keep=0.7,
+        param_target_keep=0.6,
+        graph_memory_layout="multi",
+        use_graph_full_branch=False,
+        use_graph_grad_branch=False,
+    )
+    model = OUGPGCN(cfg, edge_index=edge_index, x=x)
+
+    logits, _stats = model(x, temperature=1.0)
+    loss = F.cross_entropy(logits, y)
+    loss.backward()
+    memory_stats = model.write_memories()
+
+    assert memory_stats["graph_memory_branch_count"] == 2.0
+    assert model.graph_memory_topo is not None
+    assert model.graph_memory_feat is not None
+    assert model.graph_memory_grad is None
+
+
+def test_param_multi_state_memory_updates_layer_branch() -> None:
+    torch.manual_seed(8)
+    x = torch.randn(6, 4)
+    y = torch.tensor([0, 1, 0, 1, 0, 1])
+    edge_index = torch.tensor(
+        [
+            [0, 1, 2, 3, 4, 5, 0, 2],
+            [1, 2, 3, 4, 5, 0, 2, 0],
+        ],
+        dtype=torch.long,
+    )
+    cfg = OUGPConfig(
+        in_dim=4,
+        hidden_dim=5,
+        out_dim=2,
+        num_nodes=6,
+        num_edges=edge_index.size(1),
+        graph_target_keep=0.7,
+        param_target_keep=0.6,
+        param_memory_layout="multi",
+    )
+    model = OUGPGCN(cfg, edge_index=edge_index, x=x)
+
+    logits, _stats = model(x, temperature=1.0)
+    loss = F.cross_entropy(logits, y)
+    loss.backward()
+    memory_stats = model.write_memories()
+    resource_stats = model.resource_stats()
+
+    assert memory_stats["param_memory_branch_count"] == 2.0
+    assert model.param_memory_layer is not None
+    assert model.param_memory_layer.state.norm() > 0
+    assert memory_stats["param_memory_layer_state_norm"] > 0
+    assert resource_stats["memory_state_items"] > float(cfg.hidden_dim * cfg.memory_rank * cfg.memory_rank)
 
 
 def test_static_score_initialization_and_freezing() -> None:
