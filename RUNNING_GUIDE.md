@@ -2,6 +2,8 @@
 
 这份文档面向第一次拿到仓库、准备在 GPU / H200 服务器上复现实验的人。本文只使用仓库中已经存在的代码和脚本，不要求上传数据集到 GitHub。
 
+本次希望在 H200 上优先运行 EXP065 大图 full-graph 任务，EXP066 sampled-subgraph 作为 OOM 时的备选方案。
+
 ## 1. 环境创建
 
 进入项目目录：
@@ -109,7 +111,7 @@ full-graph backbone 队列实验：
 
 ### `scripts/run_exp066_ogbn_sampled_lhcu_backbones_wait_gpu.sh`
 
-当前推荐的大图 sampled-subgraph 主实验：
+EXP065 OOM 时的 sampled-subgraph 备选实验：
 
 - 数据集：ogbn-arxiv、ogbn-products、ogbn-proteins
 - backbone：GCN、GraphSAGE、GAT、DeeperGCN
@@ -144,13 +146,13 @@ PYTHON_BIN="$(which python)" bash scripts/run_exp066_ogbn_sampled_lhcu_backbones
 
 H200 推荐跑：
 
+- `run_exp065_full_graph_backbone_queue_wait_gpu.sh`
+  - 这是本次优先运行的大图 full-graph 任务。
+  - OGBN full graph + OUGP 在 24GB GPU 上已知容易 OOM，所以优先放到 H200。
 - `run_exp066_ogbn_sampled_lhcu_backbones_wait_gpu.sh`
-  - 这是当前最推荐的大图验证任务。
+  - 这是 EXP065 仍然 OOM 时的备选方案。
   - random / frontier subgraph 都会跑。
   - 覆盖 OGBN 三个大图和四种 backbone。
-- `run_exp065_full_graph_backbone_queue_wait_gpu.sh`
-  - 这是 full-graph 尝试任务。
-  - OGBN full graph + OUGP 在 24GB GPU 上已知容易 OOM，所以建议放到 H200。
 
 ## 5. 推荐运行顺序
 
@@ -193,9 +195,9 @@ python scripts/run_case_study.py \
 experiments/manual_smoke/
 ```
 
-### Step 3：单 seed 大图小规模确认
+### Step 3：ogbn-arxiv 单 seed full-graph smoke
 
-先用 ogbn-arxiv、GCN、random subgraph 跑一个短实验，确认 OGBN 数据下载、GPU、采样和 OUGP+LHCU 都正常：
+先用 ogbn-arxiv、GCN、full graph 跑一个短实验，确认 OGBN 数据下载、GPU 和 OUGP+LHCU 都正常：
 
 ```bash
 cd /path/to/OUGP
@@ -203,7 +205,7 @@ conda activate ougp
 PYTHONPATH=src CUDA_VISIBLE_DEVICES=0 python scripts/run_case_study.py \
   --dataset ogbn-arxiv \
   --data-root data/raw/planetoid \
-  --out-dir experiments/manual_ogbn_arxiv_gcn_random_seed0 \
+  --out-dir experiments/manual_ogbn_arxiv_gcn_fullgraph_seed0 \
   --variants dense ougp \
   --seeds 0 \
   --epochs 20 \
@@ -214,10 +216,6 @@ PYTHONPATH=src CUDA_VISIBLE_DEVICES=0 python scripts/run_case_study.py \
   --param-sparsity 0.30 \
   --backbone gcn \
   --num-gnn-layers 4 \
-  --node-sample-size 5000 \
-  --node-sample-seed 0 \
-  --node-sample-mode random \
-  --graph-memory-granularity subgraph \
   --graph-memory-layout multi \
   --param-memory-layout multi \
   --graph-score-init topofeat \
@@ -233,30 +231,36 @@ PYTHONPATH=src CUDA_VISIBLE_DEVICES=0 python scripts/run_case_study.py \
 输出目录：
 
 ```text
-experiments/manual_ogbn_arxiv_gcn_random_seed0/
+experiments/manual_ogbn_arxiv_gcn_fullgraph_seed0/
 ```
 
-### Step 4：小/中图 full graph 验证
+### Step 4：H200 优先任务，EXP065 大图 full-graph
 
 ```bash
 cd /path/to/OUGP
 conda activate ougp
-GPU_ID=0 bash scripts/run_exp064_full_graph_hidden_coupling_validation.sh
+screen -dmS ougp_exp065_fullgraph_queue bash -lc 'cd /path/to/OUGP && conda activate ougp && PYTHON="$(which python)" bash scripts/run_exp065_full_graph_backbone_queue_wait_gpu.sh'
 ```
 
 日志位置：
 
 ```text
-experiments/exp064_full_graph_hidden_coupling_validation/logs/
+experiments/exp065_full_graph_backbone_queue/logs/
+```
+
+状态文件：
+
+```text
+experiments/exp065_full_graph_backbone_queue/status.tsv
 ```
 
 结果目录：
 
 ```text
-experiments/exp064_full_graph_hidden_coupling_validation/
+experiments/exp065_full_graph_backbone_queue/
 ```
 
-### Step 5：H200 主任务，OGBN sampled-subgraph 多 backbone
+### Step 5：如果 EXP065 仍然 OOM，再运行 EXP066 sampled-subgraph
 
 如果仓库路径不是 `/home/shizitong/tianjiaying/research/ougp`，先修改 `scripts/run_exp066_ogbn_sampled_lhcu_backbones_wait_gpu.sh` 里的 `ROOT`。
 
@@ -281,32 +285,24 @@ experiments/exp066_ogbn_sampled_lhcu_backbones/<dataset>/<backbone>/<route>/run.
 experiments/exp066_ogbn_sampled_lhcu_backbones/
 ```
 
-### Step 6：可选 H200 full-graph 尝试
-
-这个实验更容易 OOM，建议在 sampled-subgraph 主实验确认正常后再跑。
+### 可选：小/中图 full graph 验证
 
 ```bash
 cd /path/to/OUGP
 conda activate ougp
-screen -dmS ougp_exp065_fullgraph_queue bash -lc 'cd /path/to/OUGP && conda activate ougp && PYTHON="$(which python)" bash scripts/run_exp065_full_graph_backbone_queue_wait_gpu.sh'
+GPU_ID=0 bash scripts/run_exp064_full_graph_hidden_coupling_validation.sh
 ```
 
 日志位置：
 
 ```text
-experiments/exp065_full_graph_backbone_queue/logs/
-```
-
-状态文件：
-
-```text
-experiments/exp065_full_graph_backbone_queue/status.tsv
+experiments/exp064_full_graph_hidden_coupling_validation/logs/
 ```
 
 结果目录：
 
 ```text
-experiments/exp065_full_graph_backbone_queue/
+experiments/exp064_full_graph_hidden_coupling_validation/
 ```
 
 ## 6. 如何判断实验是否在运行
@@ -334,6 +330,15 @@ screen -r ougp_exp066_ogbn_sampled_lhcu
 ```text
 Ctrl-a d
 ```
+
+### 查看 EXP065 full-graph 任务
+
+进入 EXP065 的 screen：
+
+```bash
+screen -r ougp_exp065_fullgraph_queue
+```
+
 
 查看 EXP066 launcher 日志：
 
