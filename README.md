@@ -2,126 +2,167 @@
 
 Online Unified Graph and Parameter Pruning for centralized GNNs.
 
-## Layout
+This repository contains the current OUGP implementation with **Layer-wise Hidden Coupling Utility (LHCU)**. OUGP jointly prunes graph edges and hidden channels, while LHCU measures how graph pruning and parameter pruning perturb hidden states and writes that coupling signal into the existing graph/parameter memory update.
+
+## What Is Included
 
 ```text
-research/ougp/
-├── README.md
-├── environment.yml
-├── .gitignore
-├── src/ougp/           # core package: data loader, model, OUGP modules
-├── scripts/            # runnable experiment entrypoints
-├── configs/            # reproducible parameter presets
-├── data/
-│   ├── raw/            # Planetoid raw files
-│   └── processed/      # reserved for processed datasets
-├── experiments/        # full records for each run
-├── results/
-│   ├── figures/
-│   └── tables/         # cleaned summary tables
-├── notes/              # idea, trackers, interpretation
-├── tests/
-└── third_party/
+src/ougp/
+  data.py      # dataset loaders and subgraph sampling inputs
+  model.py     # GNN backbones, OUGP memory, LHCU, pruning masks
+  trace.py     # pruning trace utilities
+
+scripts/
+  run_case_study.py
+  run_hidden_state_diagnostic.py
+  run_exp064_full_graph_hidden_coupling_validation.sh
+  run_exp065_full_graph_backbone_queue_wait_gpu.sh
+  run_exp066_ogbn_sampled_lhcu_backbones_wait_gpu.sh
+
+configs/       # older reproducible presets
+data/          # dataset cache; raw data is not committed
+tests/         # regression tests for memory, recall, and sampling
 ```
+
+Experiment outputs under `experiments/` and summary tables under `results/` are local artifacts and are not required to run the code.
 
 ## Environment
 
-Current working local environment:
+Create the environment from the provided file:
 
 ```bash
-/home/shizitong/miniconda3/envs/tianjiaying/bin/python
+conda env create -f environment.yml
+conda activate ougp
 ```
 
-The `tianjiaying` environment has been repaired for CUDA PyTorch and is configured with `PYTHONNOUSERSITE=1` to avoid reading `~/.local` user packages. Use `environment.yml` for a clean environment specification.
+The code expects PyTorch, NumPy, SciPy, scikit-learn, pytest, and OGB. The `environment.yml` includes the Python packages needed by the experiment scripts.
 
-## GPU Limit
-
-Any run must expose at most 4 GPUs:
+When running Python commands manually, use:
 
 ```bash
-CUDA_VISIBLE_DEVICES=0,1,2,3 ...
+export PYTHONPATH=src
 ```
 
-The runner also refuses CUDA runs when more than `--max-gpus 4` devices are visible.
+The launcher scripts set `PYTHONPATH=src` themselves.
 
-## Smoke Test
+## Datasets
 
-Run from `research/ougp/`:
+Raw datasets are **not committed**. They are downloaded on demand:
+
+- Cora / CiteSeer / PubMed: Planetoid raw files from the public Planetoid repository.
+- Amazon Photo: public `amazon_electronics_photo.npz` from gnn-benchmark.
+- ogbn-arxiv / ogbn-products / ogbn-proteins: downloaded through `ogb.nodeproppred.NodePropPredDataset`.
+
+Default data root:
+
+```text
+data/raw/planetoid
+```
+
+For OGBN, the loader redirects this to:
+
+```text
+data/raw/ogb/
+```
+
+The first run needs network access. If the server cannot access the internet, pre-populate the corresponding raw dataset directories under `data/raw/`.
+
+## Quick Smoke Test
+
+Run from the repository root:
 
 ```bash
-PYTHONPATH=src /home/shizitong/miniconda3/envs/tianjiaying/bin/python scripts/run_case_study.py \
+PYTHONPATH=src python scripts/run_case_study.py \
   --dataset cora \
-  --epochs 1 \
-  --warmup-epochs 1 \
+  --out-dir experiments/manual_smoke \
   --variants dense ougp \
   --seeds 0 \
-  --out-dir experiments/manual_smoke
+  --epochs 5 \
+  --warmup-epochs 1 \
+  --backbone gcn \
+  --num-gnn-layers 4 \
+  --graph-memory-layout multi \
+  --param-memory-layout multi \
+  --graph-score-init topofeat \
+  --param-score-init magnitude \
+  --use-hidden-coupling \
+  --hidden-coupling-mix-graph 0.2 \
+  --hidden-coupling-mix-param 0.2
 ```
 
-## First Case Study
+## Main Experiment Entrypoints
 
-Run from `research/ougp/`:
+### Full-Graph Small/Medium Graph Validation
+
+Runs Cora, CiteSeer, PubMed, and Amazon Photo with 4-layer GCN, comparing Dense and OUGP+LHCU:
 
 ```bash
-PYTHONPATH=src /home/shizitong/miniconda3/envs/tianjiaying/bin/python scripts/run_case_study.py \
+bash scripts/run_exp064_full_graph_hidden_coupling_validation.sh
+```
+
+### Full-Graph Backbone Validation
+
+Runs full-graph validation across GraphSAGE, GAT, and DeeperGCN. OGBN full-graph OUGP is expected to hit CUDA OOM on 24GB GPUs; see the note below.
+
+```bash
+bash scripts/run_exp065_full_graph_backbone_queue_wait_gpu.sh
+```
+
+### OGBN Sampled-Subgraph Validation
+
+Recommended large-graph validation. Runs ogbn-arxiv, ogbn-products, and ogbn-proteins with GCN, GraphSAGE, GAT, and DeeperGCN on both random and frontier subgraphs:
+
+```bash
+bash scripts/run_exp066_ogbn_sampled_lhcu_backbones_wait_gpu.sh
+```
+
+The script waits for free GPUs and runs up to four jobs in parallel by default.
+
+## Hidden-State Diagnostic
+
+To inspect graph/parameter hidden-state coupling:
+
+```bash
+PYTHONPATH=src python scripts/run_hidden_state_diagnostic.py \
   --dataset cora \
-  --epochs 80 \
-  --warmup-epochs 10 \
-  --variants dense graph_only param_only dual_static ougp_no_cross ougp \
-  --seeds 0 \
-  --out-dir experiments/exp001_cora_case_study_initial/primary_v2 \
-  --graph-gamma 2.0 \
-  --param-gamma 2.0 \
-  --write-beta 0.25 \
-  --verbose \
-  --log-every 20
+  --out-dir experiments/exp063_cora_hidden_state_diagnostic \
+  --seeds 0 1 2 3 4 \
+  --epochs 200 \
+  --backbone gcn \
+  --num-gnn-layers 4
 ```
 
-Each experiment directory should contain:
+The diagnostic compares dense, graph-only, parameter-only, full OUGP, and no-cross masks under the same model snapshot.
 
-- `command.txt` - exact command
-- `manifest.json` - arguments, output paths, and final metrics
-- `*_seed*.json` - config, per-epoch history, and final result
-- `*_summary.csv` / `*_summary.md` - final metrics table
+## Known Practical Limits
 
-Cleaned summary tables are copied to `results/tables/`.
+Full-graph OUGP on OGBN datasets can exceed 24GB GPU memory:
 
-## How To Read Experiments
+- ogbn-arxiv full-graph OUGP backward may require more than 100GB.
+- ogbn-products full edge similarity initialization is too large for 24GB GPUs.
+- ogbn-proteins full-graph memory read/correction can also OOM.
 
-If you are learning how to interpret experiments, start here:
+For large graphs, use sampled subgraph experiments (`random` or `frontier`) unless graph correction and memory read/write are changed to chunked mini-batch execution.
 
-```text
-notes/EXPERIMENT_GUIDE_ZH.md
+## Testing
+
+Recommended checks:
+
+```bash
+PYTHONPATH=src python -m pytest tests/test_memory_recall_steering.py tests/test_subgraph_sampling.py
+python -m py_compile src/ougp/model.py src/ougp/data.py scripts/run_case_study.py scripts/run_hidden_state_diagnostic.py
+bash -n scripts/run_exp064_full_graph_hidden_coupling_validation.sh
+bash -n scripts/run_exp065_full_graph_backbone_queue_wait_gpu.sh
+bash -n scripts/run_exp066_ogbn_sampled_lhcu_backbones_wait_gpu.sh
 ```
 
-GPU diagnosis and recommended run plan:
+## Output Format
 
-```text
-notes/GPU_DIAGNOSIS_AND_FIX_PLAN.md
-```
+Each run writes:
 
-Latest GPU multi-seed Cora run:
+- `command.txt`: command used for the run
+- `manifest.json`: arguments and final result metadata
+- `*_seed*.json`: per-seed config, epoch history, and final metrics
+- `*_summary.csv` / `*_summary.md`: aggregate result table
 
-```text
-notes/EXP002_CORA_GPU_MULTI_SEED.md
-experiments/exp002_cora_gpu_multiseed/
-results/tables/cora_exp002_gpu_multiseed_summary.csv
-```
-
-Latest Amazon Photo GPU run:
-
-```text
-notes/EXP006_AMAZON_PHOTO_GPU.md
-experiments/exp006_photo_gpu_multiseed/
-results/tables/photo_exp006_gpu_multiseed_summary.csv
-configs/photo_case_study_v1.json
-```
-
-OGB large-graph feasibility attempt:
-
-```text
-notes/EXP009_OGB_LARGE_GRAPH_ATTEMPT.md
-experiments/exp009_ogbn_arxiv_gpu_param_only/
-results/tables/ogbn_arxiv_exp009_gpu_param_only_summary.csv
-configs/ogbn_arxiv_param_only_v1.json
-```
+Large launcher scripts also write `launcher.log` and `status.tsv`.
