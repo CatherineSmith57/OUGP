@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 
 import torch
@@ -1007,6 +1008,7 @@ class OUGPGCN(nn.Module):
             "graph_logits_std": float(self.edge_logits.detach().float().std(unbiased=False).item()),
             "graph_memory_correction_mean": float(graph_corr.detach().float().mean().item()),
             "graph_memory_correction_std": float(graph_corr.detach().float().std(unbiased=False).item()),
+            "graph_policy_correction_norm": float(graph_corr.detach().float().norm().item()),
             "graph_memory_unit_correction_mean": float(unit_graph_corr.detach().float().mean().item()),
             "graph_memory_unit_correction_std": float(unit_graph_corr.detach().float().std(unbiased=False).item()),
             "graph_memory_raw_correction_mean": float(raw_graph_corr.detach().float().mean().item()),
@@ -1023,6 +1025,7 @@ class OUGPGCN(nn.Module):
             "param_logits_std": float(self.param_logits.detach().float().std(unbiased=False).item()),
             "param_memory_correction_mean": float(param_corr.detach().float().mean().item()),
             "param_memory_correction_std": float(param_corr.detach().float().std(unbiased=False).item()),
+            "channel_policy_correction_norm": float(param_corr.detach().float().norm().item()),
             "param_memory_unit_correction_mean": float(unit_param_corr.detach().float().mean().item()),
             "param_memory_unit_correction_std": float(unit_param_corr.detach().float().std(unbiased=False).item()),
             "param_memory_raw_correction_mean": float(raw_param_corr.detach().float().mean().item()),
@@ -1087,12 +1090,19 @@ class OUGPGCN(nn.Module):
     ) -> tuple[torch.Tensor, dict[str, float]] | tuple[torch.Tensor, dict[str, float], list[dict[str, torch.Tensor | str | int]]]:
         hidden_states: list[dict[str, torch.Tensor | str | int]] = []
         if fixed_masks is None:
+            if x.is_cuda:
+                torch.cuda.synchronize(x.device)
+            mask_start = time.perf_counter()
             graph_mask, param_mask, stats = self.masks(temperature)
+            if x.is_cuda:
+                torch.cuda.synchronize(x.device)
+            stats["mask_compute_sec"] = time.perf_counter() - mask_start
         else:
             graph_mask, param_mask = fixed_masks
             stats = {
                 "graph_keep": float(graph_mask.detach().float().mean().item()),
                 "param_keep": float(param_mask.detach().float().mean().item()),
+                "mask_compute_sec": 0.0,
             }
         num_nodes = x.size(0)
         if self.cfg.backbone in {"gcn", "deepgcn"}:

@@ -110,7 +110,7 @@ current parameter keep
 graph memory 会输出：
 
 ```text
-graph_corr
+raw_graph_corr
 ```
 
 它表示：
@@ -119,6 +119,20 @@ graph_corr
 历史 memory 对当前 edge score 的修正
 ```
 
+如果使用 multi-state graph memory，会先分别读取不同分支：
+
+```text
+full / topo / feat / grad
+```
+
+再用 branch gate 做加权融合：
+
+```text
+raw_graph_corr = sum(branch_gate_b * raw_graph_corr_b)
+```
+
+gate 初始化为均匀权重，因此初始行为和原来的平均融合一致。
+
 ### 5.3 Graph score
 
 当前 graph score 形式大致是：
@@ -126,18 +140,18 @@ graph_corr
 ```python
 graph_score =
     edge_logits
-  + graph_gamma * graph_corr
-  + event_gamma * graph_event_bias
-  + recall_gamma * graph_recall_bias
+  + graph_gamma * graph_logit_scale_ema * normalized_graph_memory
+  + event_gamma * graph_logit_scale_ema * normalized_graph_event
+  + recall_gamma * graph_logit_scale_ema * normalized_graph_recall
 ```
 
 其中：
 
 ```text
-edge_logits        当前可学习基础分数
-graph_corr         graph memory 的历史修正
-event_bias         被剪枝事件的累计影响
-recall_bias        恢复/保护相关的累计影响
+edge_logits             当前可学习基础分数
+normalized_graph_memory graph memory 的历史修正，已按 edge_logits 尺度对齐
+normalized_graph_event  被剪枝事件的累计影响，已按 edge_logits 尺度对齐
+normalized_graph_recall 恢复/保护相关的累计影响，已按 edge_logits 尺度对齐
 ```
 
 ## 6. Parameter 分支
@@ -206,7 +220,18 @@ memory 明明有信息，但加到 param score 后要么几乎没影响，
 要么影响过强，导致 param mask 震荡。
 ```
 
-所以当前版本把：
+所以当前版本把 graph 分支和 parameter 分支都做了尺度对齐。
+
+Graph 分支当前对齐：
+
+```text
+graph memory correction
+graph event correction
+graph recall correction
+edge_logits
+```
+
+Parameter 分支当前对齐：
 
 ```text
 channel memory correction
@@ -214,7 +239,7 @@ recall correction
 param_logits
 ```
 
-统一到了同一个动态尺度里。
+它们各自统一到了对应基础 logits 的动态尺度里。
 
 当前 parameter score 的核心形式是：
 
@@ -411,9 +436,20 @@ subgraph smoke / feasibility stage
 + graph 分支修正 edge pruning
 + parameter 分支修正 channel pruning
 + 通过 channel-specific memory 提供参数级区分能力
-+ 通过 scale alignment 保证修正信号稳定进入 param score
++ 通过 scale alignment 保证修正信号稳定进入 graph / param score
++ 支持第一版 subgraph-state write 和 multi-state memory
 + 已经从小图验证推进到大图 subgraph smoke
 ```
+
+在 CiteSeer 上，300 epoch / 10 seeds 的 GPU 复核显示：
+
+```text
+dense = 0.7130 +/- 0.0053
+stable OUGP = 0.7117 +/- 0.0075
+full multi-state OUGP = 0.7103 +/- 0.0074
+```
+
+这说明之前 short-budget probe 下的 CiteSeer 回退不能作为正式失败结论。训练充分后，OUGP 可以在 30% graph sparsity + 30% parameter sparsity 下接近 dense accuracy。
 
 ## 15. 目前还没完全做到的部分
 
@@ -421,8 +457,7 @@ subgraph smoke / feasibility stage
 
 ```text
 真正的 mini-batch / neighbor-sampled 大图训练
-Subgraph-State Write
-Multi-State Write
+更成熟的 branch-level online utility gate
 更完整的真实 latency / FLOPs benchmark
 ```
 
@@ -434,4 +469,3 @@ Multi-State Write
 大图路线已经打通入口；
 但离最终完整论文版 method 还有最后一段工程和实验要补。
 ```
-

@@ -245,6 +245,29 @@ VARIANTS = {
     "ougp": dict(use_graph_pruning=True, use_param_pruning=True, use_memory=True, use_cross=True),
 }
 
+
+def sync_if_cuda(device: torch.device) -> None:
+    if device.type == "cuda":
+        torch.cuda.synchronize(device)
+
+
+def cuda_memory_mb(device: torch.device) -> tuple[float, float]:
+    if device.type != "cuda":
+        return 0.0, 0.0
+    allocated = torch.cuda.max_memory_allocated(device) / (1024.0 * 1024.0)
+    reserved = torch.cuda.max_memory_reserved(device) / (1024.0 * 1024.0)
+    return float(allocated), float(reserved)
+
+
+def timed_section_start(device: torch.device) -> float:
+    sync_if_cuda(device)
+    return time.perf_counter()
+
+
+def timed_section_end(device: torch.device, start: float) -> float:
+    sync_if_cuda(device)
+    return time.perf_counter() - start
+
 VARIANT_PRIVATE_KEYS = {
     "gradient_param_init",
     "lottery_param_init",
@@ -668,8 +691,21 @@ def run_one(args: argparse.Namespace, dataset, variant: str, seed: int, out_dir:
     best_epoch = -1
     history = []
     start_time = time.time()
+    if device.type == "cuda":
+        torch.cuda.reset_peak_memory_stats(device)
+    peak_allocated_mb = 0.0
+    peak_reserved_mb = 0.0
+    total_train_forward_sec = 0.0
+    total_train_mask_compute_sec = 0.0
+    total_backward_sec = 0.0
+    total_eval_mask_compute_sec = 0.0
+    total_policy_write_sec = 0.0
+    total_optimizer_sec = 0.0
+    total_eval_forward_sec = 0.0
+    total_epoch_sec = 0.0
 
     for epoch in range(args.epochs):
+        epoch_start = timed_section_start(device)
         model.train()
         keep_g = target_keep_at(epoch, args.epochs, args.warmup_epochs, 1.0 - args.graph_sparsity)
         if serial_pruning:
@@ -680,6 +716,7 @@ def run_one(args: argparse.Namespace, dataset, variant: str, seed: int, out_dir:
         temperature = temperature_at(epoch, args.epochs, args.temp_start, args.temp_end)
 
         optimizer.zero_grad(set_to_none=True)
+        train_forward_start = timed_section_start(device)
         logits, mask_stats = model(x, temperature=temperature)
         if data.task_type == "multilabel":
             task_loss = F.binary_cross_entropy_with_logits(logits[train_mask], y[train_mask])
@@ -689,7 +726,11 @@ def run_one(args: argparse.Namespace, dataset, variant: str, seed: int, out_dir:
         effective_budget_lambda = float(args.budget_lambda if variant_budget_lambda is None else variant_budget_lambda)
         if effective_budget_lambda != 0.0:
             loss = loss + effective_budget_lambda * model.resource_regularization()
+        train_forward_sec = timed_section_end(device, train_forward_start)
+        train_mask_compute_sec = float(mask_stats.get("mask_compute_sec", 0.0))
+        backward_start = timed_section_start(device)
         loss.backward()
+        backward_sec = timed_section_end(device, backward_start)
         rigl_stats = {}
         if (
             rigl_param_update
@@ -704,7 +745,9 @@ def run_one(args: argparse.Namespace, dataset, variant: str, seed: int, out_dir:
             and (epoch - args.warmup_epochs) % args.unified_update_interval == 0
         ):
             unified_stats = update_scores_from_unified_dual(model, args.unified_gradient_alpha)
+        policy_write_start = timed_section_start(device)
         memory_stats = model.write_memories(x=x, temperature=temperature, epoch=epoch)
+        policy_write_sec = timed_section_end(device, policy_write_start)
         trace_stats = {}
         if trace_recorder is not None and epoch % args.trace_every == 0:
             graph_events = model.graph_trace_snapshot(
@@ -716,12 +759,17 @@ def run_one(args: argparse.Namespace, dataset, variant: str, seed: int, out_dir:
             )
             trace_recorder.record_graph_events(graph_events)
             trace_stats["trace_graph_events"] = len(graph_events)
+        optimizer_start = timed_section_start(device)
         optimizer.step()
+        optimizer_sec = timed_section_end(device, optimizer_start)
         churn_stats = model.churn()
 
         model.eval()
         with torch.no_grad():
+            eval_forward_start = timed_section_start(device)
             eval_logits, eval_mask_stats = model(x, temperature=max(args.temp_end, temperature))
+            eval_forward_sec = timed_section_end(device, eval_forward_start)
+            eval_mask_compute_sec = float(eval_mask_stats.get("mask_compute_sec", 0.0))
             eval_resource_stats = model.resource_stats()
             val_acc = evaluate_metric(eval_logits, y, val_mask, data.task_type)
             test_acc = evaluate_metric(eval_logits, y, test_mask, data.task_type)
@@ -747,6 +795,16 @@ def run_one(args: argparse.Namespace, dataset, variant: str, seed: int, out_dir:
             )
             val_acc = diagnostic_stats["recall_diag_val_acc_after_recall"]
             test_acc = diagnostic_stats["recall_diag_test_acc_after_recall"]
+        epoch_sec = timed_section_end(device, epoch_start)
+        peak_allocated_mb, peak_reserved_mb = cuda_memory_mb(device)
+        total_train_forward_sec += train_forward_sec
+        total_train_mask_compute_sec += train_mask_compute_sec
+        total_backward_sec += backward_sec
+        total_eval_mask_compute_sec += eval_mask_compute_sec
+        total_policy_write_sec += policy_write_sec
+        total_optimizer_sec += optimizer_sec
+        total_eval_forward_sec += eval_forward_sec
+        total_epoch_sec += epoch_sec
 
         row = {
             "epoch": epoch,
@@ -758,6 +816,19 @@ def run_one(args: argparse.Namespace, dataset, variant: str, seed: int, out_dir:
             "best_val": best_val,
             "best_test": best_test,
             "temperature": temperature,
+            "epoch_time_sec": epoch_sec,
+            "train_forward_sec": train_forward_sec,
+            "train_mask_compute_sec": train_mask_compute_sec,
+            "backward_sec": backward_sec,
+            "policy_write_sec": policy_write_sec,
+            "optimizer_step_sec": optimizer_sec,
+            "eval_forward_sec": eval_forward_sec,
+            "eval_mask_compute_sec": eval_mask_compute_sec,
+            "mask_policy_lhcm_overhead_sec": train_mask_compute_sec + policy_write_sec,
+            "nodes_per_sec_epoch": float(data.num_nodes / max(epoch_sec, 1e-12)),
+            "edges_per_sec_epoch": float(edge_index.size(1) / max(epoch_sec, 1e-12)),
+            "peak_gpu_allocated_mb": peak_allocated_mb,
+            "peak_gpu_reserved_mb": peak_reserved_mb,
             **mask_stats,
             **eval_mask_stats,
             **eval_resource_stats,
@@ -813,6 +884,25 @@ def run_one(args: argparse.Namespace, dataset, variant: str, seed: int, out_dir:
             print(message, flush=True)
 
     final = history[-1]
+    inference_latency_sec = 0.0
+    inference_nodes_per_sec = 0.0
+    inference_edges_per_sec = 0.0
+    if args.profile_inference_repeats > 0:
+        model.eval()
+        with torch.no_grad():
+            for _ in range(max(0, args.profile_inference_warmup)):
+                model(x, temperature=args.temp_end)
+            sync_if_cuda(device)
+            inference_start = time.perf_counter()
+            for _ in range(args.profile_inference_repeats):
+                model(x, temperature=args.temp_end)
+            sync_if_cuda(device)
+            inference_latency_sec = (time.perf_counter() - inference_start) / float(args.profile_inference_repeats)
+            inference_nodes_per_sec = float(data.num_nodes / max(inference_latency_sec, 1e-12))
+            inference_edges_per_sec = float(edge_index.size(1) / max(inference_latency_sec, 1e-12))
+    peak_allocated_mb, peak_reserved_mb = cuda_memory_mb(device)
+    dense_ops = float(final.get("dense_message_cost", 0.0)) + float(final.get("dense_parameter_count", 0.0))
+    effective_ops = float(final.get("effective_message_cost", 0.0)) + float(final.get("effective_parameter_count", 0.0))
     result = {
         "dataset": args.dataset,
         "variant": variant,
@@ -828,18 +918,50 @@ def run_one(args: argparse.Namespace, dataset, variant: str, seed: int, out_dir:
         "graph_sparsity": 1.0 - final["graph_keep"],
         "param_keep": final["param_keep"],
         "param_sparsity": 1.0 - final["param_keep"],
+        "channel_keep": final["param_keep"],
+        "channel_sparsity": 1.0 - final["param_keep"],
         "graph_churn": final.get("graph_churn", 0.0),
         "param_churn": final.get("param_churn", 0.0),
+        "channel_churn": final.get("param_churn", 0.0),
+        "graph_policy_correction_norm": final.get("graph_policy_correction_norm", 0.0),
+        "channel_policy_correction_norm": final.get("channel_policy_correction_norm", 0.0),
         "message_cost_ratio": final.get("message_cost_ratio", 1.0),
         "message_cost_reduction": final.get("message_cost_reduction", 0.0),
         "parameter_cost_ratio": final.get("parameter_cost_ratio", 1.0),
         "parameter_cost_reduction": final.get("parameter_cost_reduction", 0.0),
+        "estimated_message_cost_reduction": final.get("message_cost_reduction", 0.0),
+        "estimated_parameter_cost_reduction": final.get("parameter_cost_reduction", 0.0),
+        "actual_parameter_count_reduction": final.get("parameter_cost_reduction", 0.0),
         "dense_message_cost": final.get("dense_message_cost", 0.0),
         "effective_message_cost": final.get("effective_message_cost", 0.0),
         "dense_parameter_count": final.get("dense_parameter_count", 0.0),
         "effective_parameter_count": final.get("effective_parameter_count", 0.0),
+        "dense_effective_operation_cost": dense_ops,
+        "effective_sparse_operation_cost": effective_ops,
+        "effective_sparse_operation_reduction": 1.0 - effective_ops / max(dense_ops, 1.0),
         "memory_state_items": final.get("memory_state_items", 0.0),
         "memory_overhead_vs_dense_params": final.get("memory_overhead_vs_dense_params", 0.0),
+        "avg_epoch_time_sec": total_epoch_sec / max(args.epochs, 1),
+        "avg_train_forward_sec": total_train_forward_sec / max(args.epochs, 1),
+        "avg_train_mask_compute_sec": total_train_mask_compute_sec / max(args.epochs, 1),
+        "avg_backward_sec": total_backward_sec / max(args.epochs, 1),
+        "avg_eval_mask_compute_sec": total_eval_mask_compute_sec / max(args.epochs, 1),
+        "avg_policy_write_sec": total_policy_write_sec / max(args.epochs, 1),
+        "avg_optimizer_step_sec": total_optimizer_sec / max(args.epochs, 1),
+        "avg_eval_forward_sec": total_eval_forward_sec / max(args.epochs, 1),
+        "policy_update_overhead_ratio": total_policy_write_sec / max(total_epoch_sec, 1e-12),
+        "mask_policy_lhcm_overhead_sec": total_train_mask_compute_sec + total_policy_write_sec,
+        "mask_policy_lhcm_overhead_ratio": (total_train_mask_compute_sec + total_policy_write_sec) / max(total_epoch_sec, 1e-12),
+        "train_forward_overhead_ratio": total_train_forward_sec / max(total_epoch_sec, 1e-12),
+        "backward_overhead_ratio": total_backward_sec / max(total_epoch_sec, 1e-12),
+        "eval_forward_overhead_ratio": total_eval_forward_sec / max(total_epoch_sec, 1e-12),
+        "nodes_per_sec_train_epoch": float(data.num_nodes * args.epochs / max(total_epoch_sec, 1e-12)),
+        "edges_per_sec_train_epoch": float(edge_index.size(1) * args.epochs / max(total_epoch_sec, 1e-12)),
+        "inference_latency_sec": inference_latency_sec,
+        "inference_nodes_per_sec": inference_nodes_per_sec,
+        "inference_edges_per_sec": inference_edges_per_sec,
+        "peak_gpu_allocated_mb": peak_allocated_mb,
+        "peak_gpu_reserved_mb": peak_reserved_mb,
         "graph_memory_state_norm": float(model.graph_memory.state.norm().item()),
         "param_memory_state_norm": float(model.param_memory.state.norm().item()),
         "graph_recall_bias_norm": float(model.graph_memory.recall_bias.norm().item()),
@@ -906,8 +1028,8 @@ def aggregate(results: list[dict[str, float | int | str]], out_dir: Path, datase
         f"Dataset: `{dataset}`",
         f"Backbone: `{results[0].get('backbone', 'gcn')}`",
         "",
-        "| Variant | Best Test Acc | Graph Sparsity | Param Sparsity | Message Cost Red. | Param Cost Red. | Graph Churn | Param Churn |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| Variant | Best Test Acc | Graph Sparsity | Channel Sparsity | Message Cost Red. | Parameter Count Red. | Runtime Sec | Epoch Sec | Inference Latency ms | Peak GPU MB | Mask+Policy+LHCM Overhead | Policy Overhead |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for variant, rows in sorted(by_variant.items()):
         def mean(key: str) -> float:
@@ -920,7 +1042,10 @@ def aggregate(results: list[dict[str, float | int | str]], out_dir: Path, datase
             f"| {variant} | {mean('best_test_acc'):.4f} +/- {std('best_test_acc'):.4f} | "
             f"{mean('graph_sparsity'):.3f} | {mean('param_sparsity'):.3f} | "
             f"{mean('message_cost_reduction'):.3f} | {mean('parameter_cost_reduction'):.3f} | "
-            f"{mean('graph_churn'):.3f} | {mean('param_churn'):.3f} |"
+            f"{mean('runtime_sec'):.2f} | {mean('avg_epoch_time_sec'):.4f} | "
+            f"{1000.0 * mean('inference_latency_sec'):.3f} | {mean('peak_gpu_allocated_mb'):.1f} | "
+            f"{mean('mask_policy_lhcm_overhead_ratio'):.3f} | "
+            f"{mean('policy_update_overhead_ratio'):.3f} |"
         )
     (out_dir / f"{dataset}_summary.md").write_text("\n".join(lines) + "\n")
 
@@ -1164,6 +1289,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--trace-top-k", type=int, default=200)
     parser.add_argument("--recall-diagnostics", action="store_true")
     parser.add_argument("--recall-effect-eps", type=float, default=1e-4)
+    parser.add_argument("--profile-inference-repeats", type=int, default=0)
+    parser.add_argument("--profile-inference-warmup", type=int, default=3)
     parser.add_argument("--score-diagnostics", action="store_true")
     parser.add_argument("--verbose", action="store_true")
     parser.add_argument("--log-every", type=int, default=20)
@@ -1199,6 +1326,10 @@ def validate_gpu_budget(args: argparse.Namespace) -> None:
         raise ValueError("--hidden-coupling-interval must be positive.")
     if args.hidden_coupling_start_epoch < 0:
         raise ValueError("--hidden-coupling-start-epoch must be non-negative.")
+    if args.profile_inference_repeats < 0:
+        raise ValueError("--profile-inference-repeats must be non-negative.")
+    if args.profile_inference_warmup < 0:
+        raise ValueError("--profile-inference-warmup must be non-negative.")
     if not 0.0 <= args.hidden_coupling_mix_graph <= 1.0:
         raise ValueError("--hidden-coupling-mix-graph must be in [0, 1].")
     if not 0.0 <= args.hidden_coupling_mix_param <= 1.0:
